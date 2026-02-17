@@ -2,8 +2,6 @@ use std::fmt::Display;
 
 use indexmap::IndexMap;
 
-use crate::map::{ArrayImpl, ObjectImpl};
-
 use super::index::Index;
 
 use paste::paste;
@@ -32,9 +30,9 @@ pub enum Value {
   UnsignedIntegerNumber(u32),
   SignedIntegerNumber(i32),
 
-  Object(ObjectImpl),
+  Object(IndexMap<String, Value>),
 
-  Array(ArrayImpl),
+  Array(Vec<Value>),
 }
 
 #[derive(Debug, PartialEq, Clone)]

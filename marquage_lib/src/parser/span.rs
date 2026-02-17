@@ -4,32 +4,37 @@ use crate::parser::position::Position;
 pub struct Span {
   pub(crate) start: Position,
   pub(crate) end: Position,
-  pub(crate) offsets: (usize, usize),
+  // For offset, it is a left-closed and right-open interval.
+  pub(crate) offset: (usize, usize),
 }
 
 impl Span {
-  pub fn new(start: Position, end: Position, offsets: (usize, usize)) -> Self {
-    assert!(start <= end, "start position is bigger than end position");
-    Self { start, end, offsets  }
+  pub fn new(start: Position, end: Position, offset: (usize, usize)) -> Self {
+    assert!(start <= end, "start is bigger than end");
+    assert!(offset.0 <= offset.1, "start offset is bigger than end offset");
+    Self { start, end, offset }
   }
 
-  fn merge_offsets(&self, other: &Self) -> Option<(usize, usize)>{
-    if self.offsets.1 >= other.offsets.0 && self.offsets.1 >= other.offsets.0 {
-      Some((self.offsets.0.min(other.offsets.0), self.offsets.1.max(other.offsets.1)))
-    }else{
+  fn merge_offset(&self, other: &Self) -> Option<(usize, usize)> {
+    if self.offset.1 >= other.offset.0 && other.offset.1 >= self.offset.0 {
+      Some((
+        self.offset.0.min(other.offset.0),
+        self.offset.1.max(other.offset.1),
+      ))
+    } else {
       None
     }
   }
 
-  pub fn combine(&mut self, other: &Self) -> Option<Self> {
-    let new_offsets = self.merge_offsets(other);
-    if let Some(offsets) = new_offsets {
+  pub fn combine(&self, other: &Self) -> Option<Self> {
+    let new_offset = self.merge_offset(other);
+    if let Some(offset) = new_offset {
       Some(Self {
         start: self.start.min(other.start),
         end: self.end.max(other.end),
-        offsets
+        offset,
       })
-    }else{
+    } else {
       None
     }
   }

@@ -1,9 +1,11 @@
+use std::fmt::Display;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Literal<'a> {
   Void,
 
   RawString(&'a str),
-  QuotedString(&'a str),
+  QuotedString(String),
 
   Boolean(bool),
 
@@ -11,19 +13,20 @@ pub enum Literal<'a> {
   UnsignedIntegerNumber(u32),
   SignedIntegerNumber(i32),
 
-  OpenBrace, // {
+  OpenBrace,  // {
   CloseBrace, // }
 
-  OpenParen, // (
+  OpenParen,  // (
   CloseParen, // )
 
-  OpenBracket, // [
+  OpenBracket,  // [
   CloseBracket, // ]
 
   Semicolon, // ;
-  Comma, // ,
+  Comma,     // ,
 
-  At, // @
+  At,    // @
+  Equal, // =
 
   Comment(&'a str),
 
@@ -46,7 +49,11 @@ impl<'a> Literal<'a> {
   }
 
   pub fn get_raw_string_content(&self) -> Option<String> {
-    if let Self::RawString(content) = self { Some(content.to_string()) } else { None }
+    if let Self::RawString(content) = self {
+      Some(content.to_string())
+    } else {
+      None
+    }
   }
 
   pub fn is_quoted_string(&self) -> bool {
@@ -57,7 +64,11 @@ impl<'a> Literal<'a> {
   }
 
   pub fn get_quoted_string_content(&self) -> Option<String> {
-    if let Self::QuotedString(content) = self { Some(content.to_string()) } else { None }
+    if let Self::QuotedString(content) = self {
+      Some(content.to_string())
+    } else {
+      None
+    }
   }
 
   pub fn is_unsigned_int(&self) -> bool {
@@ -98,6 +109,13 @@ impl<'a> Literal<'a> {
   pub fn is_semicolon(&self) -> bool {
     match self {
       Self::Semicolon => true,
+      _ => false,
+    }
+  }
+
+  pub fn is_equal(&self) -> bool {
+    match self {
+      Self::Equal => true,
       _ => false,
     }
   }
@@ -162,6 +180,32 @@ impl<'a> Literal<'a> {
     match self {
       Self::Comment(_) => true,
       _ => false,
+    }
+  }
+}
+
+impl<'a> Display for Literal<'a> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Self::At => write!(f, "@"),
+      Self::Boolean(b) => write!(f, "{b}"),
+      Self::CloseBrace => write!(f, "}}"),
+      Self::CloseBracket => write!(f, "]"),
+      Self::CloseParen => write!(f, ")"),
+      Self::Comma => write!(f, ","),
+      Self::Comment(c) => write!(f, "{c}"),
+      Self::End => write!(f, "<End of line>"),
+      Self::Equal => write!(f, "="),
+      Self::FloatNumber(n) => write!(f, "{n}"),
+      Self::OpenBrace => write!(f, "{{"),
+      Self::OpenBracket => write!(f, "["),
+      Self::OpenParen => write!(f, "("),
+      Self::QuotedString(s) => write!(f, "{s}"),
+      Self::RawString(s) => write!(f, "{s}"),
+      Self::Semicolon => write!(f, ";"),
+      Self::SignedIntegerNumber(n) => write!(f, "{n}"),
+      Self::UnsignedIntegerNumber(n) => write!(f, "{n}"),
+      Self::Void => write!(f, "void"),
     }
   }
 }
