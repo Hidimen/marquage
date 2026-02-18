@@ -1,4 +1,4 @@
-use crate::parser::{
+use crate::parse::{
   error::LexerError, literal::Literal, position::Position,
   source_map::SourceMap, span::Span, token::Token,
 };
@@ -21,12 +21,12 @@ impl<'lex> Lexer<'lex> {
       let legacy_pos = self.pos.add_column_by(1);
       let current_pos = self.pos;
       match s {
-        "{" => Ok(Self::create_token(
+        "{" => {Ok(Self::create_token(
           Literal::OpenBrace,
           legacy_pos,
           current_pos,
           (offset, offset + 1),
-        )),
+        ))},
         "}" => Ok(Self::create_token(
           Literal::CloseBrace,
           legacy_pos,
@@ -517,6 +517,15 @@ impl<'lex> Lexer<'lex> {
   #[inline]
   fn consume(&mut self) {
     self.map.consume();
+  }
+
+  #[allow(dead_code)]
+  fn is_one(&self) -> bool{
+    if let Some(p) = self.peek() && (p != " " && p != "\n" && p != "\r" && p != "\t" && p != "#" && p != "," && p != ";" && p != "-" && p != "@" && p != "[" && p != "{" && p != "(" && p != "]" && p != "}" && p != ")" && p != "="){
+      false
+    }else{
+      true
+    }
   }
 
   fn skipping_advance(&mut self) -> Option<(&'lex str, usize)> {

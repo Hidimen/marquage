@@ -1,4 +1,4 @@
-use crate::parser::{literal::Literal, span::Span};
+use crate::parse::{literal::Literal, span::Span};
 
 #[derive(Debug)]
 pub struct Token<'token>(Literal<'token>, Span);

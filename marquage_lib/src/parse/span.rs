@@ -1,4 +1,4 @@
-use crate::parser::position::Position;
+use crate::parse::position::Position;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Span {

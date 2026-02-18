@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
 use indexmap::IndexMap;
+use paste::paste;
 
 use super::index::Index;
 
-use paste::paste;
 
 /// Values that represent data structure in `Marquage`
 ///
