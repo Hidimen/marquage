@@ -26,16 +26,16 @@ impl Span {
     }
   }
 
+  pub fn is_same_line(&self, other: &Self) -> bool {
+    self.end.0 == other.end.0
+  }
+
   pub fn combine(&self, other: &Self) -> Option<Self> {
     let new_offset = self.merge_offset(other);
-    if let Some(offset) = new_offset {
-      Some(Self {
-        start: self.start.min(other.start),
-        end: self.end.max(other.end),
-        offset,
-      })
-    } else {
-      None
-    }
+    new_offset.map(|offset| Self {
+      start: self.start.min(other.start),
+      end: self.end.max(other.end),
+      offset,
+    })
   }
 }

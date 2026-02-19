@@ -16,17 +16,17 @@ impl<'lex> Lexer<'lex> {
     Self { map: SourceMap::new(raw), pos: Position(1, 1) }
   }
 
-  pub fn lex(&mut self) -> Result<Token<'_>, LexerError<'_>> {
+  pub fn lex(&mut self) -> Result<Token, LexerError> {
     if let Some((s, offset)) = self.skipping_advance() {
       let legacy_pos = self.pos.add_column_by(1);
       let current_pos = self.pos;
       match s {
-        "{" => {Ok(Self::create_token(
+        "{" => Ok(Self::create_token(
           Literal::OpenBrace,
           legacy_pos,
           current_pos,
           (offset, offset + 1),
-        ))},
+        )),
         "}" => Ok(Self::create_token(
           Literal::CloseBrace,
           legacy_pos,
@@ -87,9 +87,9 @@ impl<'lex> Lexer<'lex> {
         other if self.is_digital(other) => {
           self.handle_number(offset, legacy_pos, false)
         },
-        other if other == "v" => self.handle_void(offset, legacy_pos),
-        other if other == "t" => self.handle_true(offset, legacy_pos),
-        other if other == "f" => self.handle_false(offset, legacy_pos),
+        "v" => self.handle_void(offset, legacy_pos),
+        "t" => self.handle_true(offset, legacy_pos),
+        "f" => self.handle_false(offset, legacy_pos),
         _ => self.handle_raw_string(offset, legacy_pos),
       }
     } else {
@@ -99,7 +99,7 @@ impl<'lex> Lexer<'lex> {
 
   fn handle_void(
     &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token<'_>, LexerError<'_>> {
+  ) -> Result<Token, LexerError> {
     let remains = ["o", "i", "d"];
     for i in remains {
       if let Some((s, _)) = self.advance()
@@ -140,7 +140,7 @@ impl<'lex> Lexer<'lex> {
 
   fn handle_true(
     &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token<'_>, LexerError<'_>> {
+  ) -> Result<Token, LexerError> {
     let remains = ["r", "u", "e"];
     for i in remains {
       if let Some((s, _)) = self.advance()
@@ -181,7 +181,7 @@ impl<'lex> Lexer<'lex> {
 
   fn handle_false(
     &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token<'_>, LexerError<'_>> {
+  ) -> Result<Token, LexerError> {
     let remains = ["a", "l", "s", "e"];
     for i in remains {
       if let Some((s, _)) = self.advance()
@@ -222,7 +222,7 @@ impl<'lex> Lexer<'lex> {
 
   fn handle_quoted_string(
     &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token<'_>, LexerError<'_>> {
+  ) -> Result<Token, LexerError> {
     let mut buffer: Vec<u8> = Vec::new();
     let mut cache = start_offset + 1;
     while let Some((s, offset)) = self.advance() {
@@ -309,9 +309,7 @@ impl<'lex> Lexer<'lex> {
     Err(LexerError::UnexpectedInterruption)
   }
 
-  fn handle_comment(
-    &mut self, start_offset: usize, start: Position,
-  ) -> Token<'_> {
+  fn handle_comment(&mut self, start_offset: usize, start: Position) -> Token {
     while let Some((s, _)) = self.advance() {
       match s {
         "\n" => {
@@ -326,7 +324,7 @@ impl<'lex> Lexer<'lex> {
     }
 
     Self::create_token(
-      Literal::Comment(""),
+      Literal::Comment("".into()),
       start,
       self.pos,
       (start_offset, self.current_offset()),
@@ -335,7 +333,7 @@ impl<'lex> Lexer<'lex> {
 
   fn handle_number(
     &mut self, start_offset: usize, start: Position, neg: bool,
-  ) -> Result<Token<'_>, LexerError<'_>> {
+  ) -> Result<Token, LexerError> {
     while let Some((s, _)) = self.advance() {
       match s {
         " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" => {
@@ -343,10 +341,10 @@ impl<'lex> Lexer<'lex> {
           break;
         },
         other
-          if other == "[" || other == "{" || other == "[" || other == "\"" =>
+          if other == "[" || other == "{" || other == "(" || other == "\"" =>
         {
           return Err(LexerError::UnexpectedLiteral {
-            literal: other,
+            literal: other.into(),
             span: Span::new(
               start,
               self.pos,
@@ -406,7 +404,7 @@ impl<'lex> Lexer<'lex> {
 
   fn handle_float_number(
     &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token<'_>, LexerError<'_>> {
+  ) -> Result<Token, LexerError> {
     while let Some((s, _)) = self.advance() {
       match s {
         " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" => {
@@ -414,10 +412,10 @@ impl<'lex> Lexer<'lex> {
           break;
         },
         other
-          if other == "[" || other == "{" || other == "[" || other == "\"" =>
+          if other == "[" || other == "{" || other == "(" || other == "\"" =>
         {
           return Err(LexerError::UnexpectedLiteral {
-            literal: other,
+            literal: other.into(),
             span: Span::new(
               start,
               self.pos,
@@ -451,7 +449,7 @@ impl<'lex> Lexer<'lex> {
 
   fn handle_raw_string(
     &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token<'_>, LexerError<'_>> {
+  ) -> Result<Token, LexerError> {
     while let Some((s, _)) = self.advance() {
       match s {
         " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" => {
@@ -459,10 +457,10 @@ impl<'lex> Lexer<'lex> {
           break;
         },
         other
-          if other == "[" || other == "{" || other == "[" || other == "\"" =>
+          if other == "[" || other == "{" || other == "(" || other == "\"" =>
         {
           return Err(LexerError::UnexpectedLiteral {
-            literal: other,
+            literal: other.into(),
             span: Span::new(
               start,
               self.pos,
@@ -479,7 +477,7 @@ impl<'lex> Lexer<'lex> {
 
     Ok(Self::create_token(
       Literal::RawString(
-        self.map.get_by_offset(start_offset, self.current_offset()),
+        self.map.get_by_offset(start_offset, self.current_offset()).into(),
       ),
       start,
       self.pos,
@@ -488,9 +486,8 @@ impl<'lex> Lexer<'lex> {
   }
 
   fn create_token(
-    literal: Literal<'lex>, start: Position, end: Position,
-    offsets: (usize, usize),
-  ) -> Token<'lex> {
+    literal: Literal, start: Position, end: Position, offsets: (usize, usize),
+  ) -> Token {
     Token::new(literal, Span::new(start, end, offsets))
   }
 
@@ -520,10 +517,27 @@ impl<'lex> Lexer<'lex> {
   }
 
   #[allow(dead_code)]
-  fn is_one(&self) -> bool{
-    if let Some(p) = self.peek() && (p != " " && p != "\n" && p != "\r" && p != "\t" && p != "#" && p != "," && p != ";" && p != "-" && p != "@" && p != "[" && p != "{" && p != "(" && p != "]" && p != "}" && p != ")" && p != "="){
+  fn is_one(&self) -> bool {
+    if let Some(p) = self.peek()
+      && (p != " "
+        && p != "\n"
+        && p != "\r"
+        && p != "\t"
+        && p != "#"
+        && p != ","
+        && p != ";"
+        && p != "-"
+        && p != "@"
+        && p != "["
+        && p != "{"
+        && p != "("
+        && p != "]"
+        && p != "}"
+        && p != ")"
+        && p != "=")
+    {
       false
-    }else{
+    } else {
       true
     }
   }
@@ -531,13 +545,14 @@ impl<'lex> Lexer<'lex> {
   fn skipping_advance(&mut self) -> Option<(&'lex str, usize)> {
     while let Some((s, offset)) = self.map.advance() {
       if s == " " || s == "\t" {
+        self.pos.add_column();
         continue;
       } else if s == "\r" {
-        if let Some(n) = self.peek() {
-          if n == "\n" {
-            self.pos.add_line_by(1);
-            self.consume();
-          }
+        if let Some(n) = self.peek()
+          && n == "\n"
+        {
+          self.pos.add_line_by(1);
+          self.consume();
         }
         continue;
       } else if s == "\n" {

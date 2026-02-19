@@ -1,4 +1,4 @@
-use crate::value::Value;
+use crate::data::Value;
 
 /// Index data from object or array
 pub trait Index {

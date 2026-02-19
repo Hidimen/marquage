@@ -1,10 +1,10 @@
 use std::{error::Error, fmt::Display};
 
-use crate::parse::span::Span;
+use crate::parse::{literal::Literal, span::Span};
 
 #[derive(Debug)]
-pub enum LexerError<'a> {
-  UnexpectedLiteral { literal: &'a str, span: Span },
+pub enum LexerError {
+  UnexpectedLiteral { literal: String, span: Span },
   NonNumberAfterDot { span: Span },
   UnexpectedInterruption,
   UnexpectedNewline { span: Span },
@@ -12,7 +12,7 @@ pub enum LexerError<'a> {
   UndefinedEscape { span: Span },
 }
 
-impl<'a> Display for LexerError<'a> {
+impl Display for LexerError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::UnexpectedLiteral { literal, span } => {
@@ -62,19 +62,80 @@ impl<'a> Display for LexerError<'a> {
   }
 }
 
-impl<'a> Error for LexerError<'a>{}
+impl Error for LexerError {}
 
 #[derive(Debug)]
-pub enum ParserError<'a> {
-  LexingError(LexerError<'a>)
+pub enum ParserError {
+  LexingError(LexerError),
+  ExpectKey(Literal, Span),
+  ExpectValue(Literal, Span),
+  ExpectBrace(Literal, Span),
+  ExpectEqual(Literal, Span),
+  ExpectSemicolon(Literal, Span),
+  ExpectCommaOrCloseBracket(Literal, Span),
+  UnexpectedCloseBrace(Span),
 }
 
-impl<'a> Display for ParserError<'a> {
+impl Display for ParserError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::LexingError(e) => write!(f, "{e}"),
+      Self::ExpectKey(l, span) => write!(
+        f,
+        "Expect a key, but found {} in line {line}, column {column} ",
+        l,
+        line = span.start.0,
+        column = span.start.1
+      ),
+      Self::ExpectValue(l, span) => write!(
+        f,
+        "Expect a key, but found {} in line {line}, column {column}",
+        l,
+        line = span.start.0,
+        column = span.start.1
+      ),
+      Self::ExpectBrace(l, span) => write!(
+        f,
+        "Expect a close brace, but found {} in line {line}, column {column}",
+        l,
+        line = span.start.0,
+        column = span.start.1
+      ),
+      Self::ExpectEqual(l, span) => write!(
+        f,
+        "Expect an equal mark, but found {} in line {line}, column {column}",
+        l,
+        line = span.start.0,
+        column = span.start.1
+      ),
+      Self::ExpectSemicolon(l, span) => write!(
+        f,
+        "Expect a semicolon, but found {} in line {line}, column {column}",
+        l,
+        line = span.start.0,
+        column = span.start.1
+      ),
+      Self::ExpectCommaOrCloseBracket(l, span) => write!(
+        f,
+        "Expect a comma or close bracket, but found {} in line {line}, column {column}",
+        l,
+        line = span.start.0,
+        column = span.start.1
+      ),
+      Self::UnexpectedCloseBrace(span) => write!(
+        f,
+        "Unexpected brace in line {line}, column {column}",
+        line = span.start.0,
+        column = span.start.1
+      ),
     }
   }
 }
 
-impl<'a> Error for ParserError<'a>{}
+impl From<LexerError> for ParserError {
+  fn from(value: LexerError) -> Self {
+    Self::LexingError(value)
+  }
+}
+
+impl Error for ParserError {}

@@ -43,7 +43,7 @@ impl<'a> SourceMap<'a> {
 
   pub fn get_by_offset(&self, start: usize, end: usize) -> &'a str {
     assert!(start <= end, "start should be less than or equal to end");
-    assert!(end <= self.offsets.len() - 1, "end is out of bounds");
+    assert!(end < self.offsets.len(), "end is out of bounds");
 
     let start_offset = self.offsets[start];
     let end_offset = self.offsets[end];

@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use crate::value::Value;
+use crate::data::Value;
 
 macro_rules! impl_from_for_unsigned {
     ($($ty:ident),*) => {
@@ -42,13 +42,13 @@ impl From<bool> for Value {
 
 impl From<String> for Value {
   fn from(value: String) -> Self {
-    Value::String(value, super::StringType::DoubleQuoted)
+    Value::QuotedString(value)
   }
 }
 
 impl<'a> From<&'a str> for Value {
   fn from(value: &'a str) -> Self {
-    Value::String(value.to_string(), super::StringType::DoubleQuoted)
+    Value::QuotedString(value.into())
   }
 }
 

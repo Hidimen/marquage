@@ -1,18 +1,26 @@
 use crate::parse::{literal::Literal, span::Span};
 
 #[derive(Debug)]
-pub struct Token<'token>(Literal<'token>, Span);
+pub struct Token(Literal, Span);
 
-impl<'token> Token<'token> {
-  pub fn new(literal: Literal<'token>, span: Span) -> Self {
+impl Token {
+  pub fn new(literal: Literal, span: Span) -> Self {
     Self(literal, span)
   }
 
-  pub fn get_literal(&self) -> &Literal<'token> {
+  pub fn get_literal_ref(&self) -> &Literal {
     &self.0
+  }
+
+  pub fn get_literal(self) -> Literal {
+    self.0
   }
 
   pub fn get_span(&self) -> Span {
     self.1
+  }
+
+  pub fn split(self) -> (Literal, Span) {
+    (self.0, self.1)
   }
 }
