@@ -6,7 +6,7 @@ use syn::{
   Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned,
 };
 
-#[proc_macro_derive(Parse)]
+#[proc_macro_derive(Parse, attributes(rename))]
 pub fn parseable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
@@ -38,14 +38,18 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
   };
   let parseable_fields = fields.iter().map(|f| {
     let name = f.ident.as_ref().unwrap();
+    let rename = match utils::get_rename(&f.attrs, name.to_string()) {
+      Ok(n) => n,
+      Err(e) => return e.to_compile_error()
+    };
     let f_span = f.span();
 
     quote_spanned! { f_span =>
       #name: {
-        if let Some(data) = map.swap_remove(stringify!(#name)) {
+        if let Some(data) = map.swap_remove(#rename) {
           ::marquage::Parseable::parse(data)?
         }else{
-          return Err(::marquage::error::CastError::FieldNotFound(stringify!(#name).to_string()));
+          return Err(::marquage::error::CastError::FieldNotFound(stringify!(#rename).to_string()));
         }
       }
     }
@@ -71,7 +75,7 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
   TokenStream::from(expanded)
 }
 
-#[proc_macro_derive(Generate)]
+#[proc_macro_derive(Generate, attributes(rename))]
 pub fn generable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
@@ -103,19 +107,27 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
   };
   let generable_fields = fields.iter().map(|f| {
     let name = f.ident.as_ref().unwrap();
+    let rename = match utils::get_rename(&f.attrs, name.to_string()) {
+      Ok(n) => n,
+      Err(e) => return e.to_compile_error()
+    };
     let f_span = f.span();
 
     quote_spanned! { f_span =>
-      map.insert(String::from(stringify!(#name)), ::marquage::Generable::generate(self.#name));
+      map.insert(#rename.to_string(), ::marquage::Generable::generate(self.#name));
     }
   });
 
   let generable_ref_fields = fields.iter().map(|f| {
     let name = f.ident.as_ref().unwrap();
+    let rename = match utils::get_rename(&f.attrs, name.to_string()) {
+      Ok(n) => n,
+      Err(e) => return e.to_compile_error()
+    };
     let f_span = f.span();
 
     quote_spanned! { f_span =>
-      map.insert(String::from(stringify!(#name)), ::marquage::Generable::generate_ref(&self.#name));
+      map.insert(#rename.to_string(), ::marquage::Generable::generate_ref(&self.#name));
     }
   });
 

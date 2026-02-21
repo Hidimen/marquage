@@ -399,11 +399,11 @@ impl Generable for Box<str> {
 
 impl<T: Generable> Generable for Vec<T> {
   fn generate(self) -> Value {
-    Value::Array({ self.into_iter().map(T::generate).collect() })
+    Value::Array(self.into_iter().map(T::generate).collect())
   }
 
   fn generate_ref(&self) -> Value {
-    Value::Array({ self.iter().map(T::generate_ref).collect() })
+    Value::Array(self.iter().map(T::generate_ref).collect())
   }
 }
 
@@ -419,11 +419,11 @@ impl<T: Generable> Generable for Option<T> {
 
 impl<T: Generable> Generable for Box<[T]> {
   fn generate(self) -> Value {
-    Value::Array({ self.into_iter().map(T::generate).collect() })
+    Value::Array(self.into_iter().map(T::generate).collect())
   }
 
   fn generate_ref(&self) -> Value {
-    Value::Array({ self.iter().map(T::generate_ref).collect() })
+    Value::Array(self.iter().map(T::generate_ref).collect())
   }
 }
 
