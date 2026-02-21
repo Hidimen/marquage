@@ -3,7 +3,7 @@ use std::fmt::Display;
 use indexmap::IndexMap;
 use paste::paste;
 
-use crate::Parseable;
+use crate::{Generable, Parseable};
 
 use super::index::Index;
 
@@ -137,7 +137,7 @@ impl Value {
   }
 }
 
-macro_rules! impl_for_unsigned {
+macro_rules! impl_p_for_unsigned {
   ($($i: ident),*) => {
     $(
       impl Parseable for $i {
@@ -152,9 +152,9 @@ macro_rules! impl_for_unsigned {
   };
 }
 
-impl_for_unsigned!(u8, u16, u32, u64, u128);
+impl_p_for_unsigned!(u8, u16, u32, u64, u128);
 
-macro_rules! impl_for_signed {
+macro_rules! impl_p_for_signed {
   ($($i: ident),*) => {
     $(
       impl Parseable for $i {
@@ -169,7 +169,7 @@ macro_rules! impl_for_signed {
   };
 }
 
-impl_for_signed!(i8, i16, i32, i64, i128);
+impl_p_for_signed!(i8, i16, i32, i64, i128);
 
 impl Parseable for bool {
   fn parse(v: Value) -> Result<Self, crate::error::CastError> {
@@ -265,7 +265,7 @@ impl Parseable for () {
   }
 }
 
-macro_rules! impl_for_array {
+macro_rules! impl_p_for_array {
   ($($n: expr),+) => {
     $(
       impl<T:Parseable> Parseable for [T; $n] {
@@ -287,7 +287,152 @@ macro_rules! impl_for_array {
   };
 }
 
-impl_for_array! {
+impl_p_for_array! {
   1, 2, 3, 4, 5, 6, 7, 8, 9,
   10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+}
+
+macro_rules! impl_g_for_unsigned {
+  ($($i: ident),*) => {
+    $(
+      impl Generable for $i {
+        fn generate(self) -> Value {
+          Value::UnsignedIntegerNumber(self as u32)
+        }
+
+        fn generate_ref(&self) -> Value {
+          Value::UnsignedIntegerNumber(*self as u32)
+        }
+      }
+    )*
+  };
+}
+impl_g_for_unsigned!(u8, u16, u32, u64, u128);
+
+macro_rules! impl_g_for_signed {
+  ($($i: ident),*) => {
+    $(
+      impl Generable for $i {
+        fn generate(self) -> Value {
+          Value::SignedIntegerNumber(self as i32)
+        }
+
+        fn generate_ref(&self) -> Value {
+          Value::SignedIntegerNumber(*self as i32)
+        }
+      }
+    )*
+  };
+}
+
+impl_g_for_signed!(i8, i16, i32, i64, i128);
+
+impl Generable for bool {
+  fn generate(self) -> Value {
+    Value::Boolean(self)
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::Boolean(*self)
+  }
+}
+
+impl Generable for String {
+  fn generate(self) -> Value {
+    Value::QuotedString(self)
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::QuotedString(self.clone())
+  }
+}
+
+impl Generable for &str {
+  fn generate(self) -> Value {
+    Value::QuotedString(self.to_string())
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::QuotedString(self.to_string())
+  }
+}
+
+impl Generable for f32 {
+  fn generate(self) -> Value {
+    Value::FloatNumber(self)
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::FloatNumber(*self)
+  }
+}
+
+impl Generable for f64 {
+  fn generate(self) -> Value {
+    Value::FloatNumber(self as f32)
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::FloatNumber(*self as f32)
+  }
+}
+
+impl<T: Generable> Generable for Box<T> {
+  fn generate(self) -> Value {
+    T::generate(*self)
+  }
+
+  fn generate_ref(&self) -> Value {
+    T::generate_ref(self)
+  }
+}
+
+impl Generable for Box<str> {
+  fn generate(self) -> Value {
+    Value::QuotedString(self.to_string())
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::QuotedString(self.to_string())
+  }
+}
+
+impl<T: Generable> Generable for Vec<T> {
+  fn generate(self) -> Value {
+    Value::Array({ self.into_iter().map(T::generate).collect() })
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::Array({ self.iter().map(T::generate_ref).collect() })
+  }
+}
+
+impl<T: Generable> Generable for Option<T> {
+  fn generate(self) -> Value {
+    if let Some(val) = self { T::generate(val) } else { Value::Void }
+  }
+
+  fn generate_ref(&self) -> Value {
+    if let Some(val) = self { T::generate_ref(val) } else { Value::Void }
+  }
+}
+
+impl<T: Generable> Generable for Box<[T]> {
+  fn generate(self) -> Value {
+    Value::Array({ self.into_iter().map(T::generate).collect() })
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::Array({ self.iter().map(T::generate_ref).collect() })
+  }
+}
+
+impl Generable for () {
+  fn generate(self) -> Value {
+    Value::Void
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::Void
+  }
 }

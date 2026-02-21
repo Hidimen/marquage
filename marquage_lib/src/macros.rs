@@ -3,7 +3,7 @@ macro_rules! marquage {
   ($($item:ident = $content:tt;)*) => {
     $crate::data::Value::Object({
       let mut map = indexmap::IndexMap::new();
-      $(map.insert(stringify!($item).to_string(), marquage_impl!(@value $content));)*
+      $(map.insert(stringify!($item).to_string(), $crate::marquage_impl!(@value $content));)*
       map
     })
   }
@@ -30,18 +30,18 @@ macro_rules! marquage_impl {
   (@value { $( $key:ident = $value: tt;)* }) => {
     $crate::data::Value::Object({
       let mut map = indexmap::IndexMap::new();
-      $(map.insert(stringify!($key).to_string(), marquage_impl!(@value $value));)*
+      $(map.insert(stringify!($key).to_string(), $crate::marquage_impl!(@value $value));)*
       map
     })
   };
   (@value [];) => {
-    $crate::value::Value::Array({
+    $crate::data::Value::Array({
       vec![]
     })
   };
   (@value [ $($element:tt),*$(,)? ]) => {
-    $crate::value::Value::Array({
-      vec![$(marquage_impl!(@value $element),)*]
+    $crate::data::Value::Array({
+      vec![$($crate::marquage_impl!(@value $element),)*]
     })
   }
 }

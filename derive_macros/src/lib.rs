@@ -2,26 +2,39 @@ mod utils;
 
 use proc_macro::TokenStream;
 use quote::quote_spanned;
-use syn::{Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned};
+use syn::{
+  Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned,
+};
 
-#[proc_macro_derive(Parseable)]
+#[proc_macro_derive(Parse)]
 pub fn parseable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
-  let generic = utils::add_trait_bounds(ast.generics.clone(), parse_quote!(Parseable));
+  let generic =
+    utils::add_trait_bounds(ast.generics.clone(), parse_quote!(Parseable));
   let (impl_generics, ty_generics, where_clause) = generic.split_for_impl();
   let span = name.span();
 
   let fields = match &ast.data {
-    Data::Struct(data_struct) => {
-      match &data_struct.fields {
-        syn::Fields::Named(field) => {
-          &field.named
-        },
-        _ => return Error::new_spanned(ast, "Parseable trait is applicable only to named field").to_compile_error().into()
-      }
+    Data::Struct(data_struct) => match &data_struct.fields {
+      syn::Fields::Named(field) => &field.named,
+      _ => {
+        return Error::new_spanned(
+          ast,
+          "Parseable trait is applicable only to named field",
+        )
+        .to_compile_error()
+        .into();
+      },
     },
-    _ => return Error::new_spanned(ast, "Parseable trait is applicable only to structs").to_compile_error().into()
+    _ => {
+      return Error::new_spanned(
+        ast,
+        "Parseable trait is applicable only to structs",
+      )
+      .to_compile_error()
+      .into();
+    },
   };
   let parseable_fields = fields.iter().map(|f| {
     let name = f.ident.as_ref().unwrap();
@@ -51,6 +64,77 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
           },
           _ => Err(::marquage::error::CastError::IncompatibleType)
         }
+      }
+    }
+  };
+
+  TokenStream::from(expanded)
+}
+
+#[proc_macro_derive(Generate)]
+pub fn generable_derive(input: TokenStream) -> TokenStream {
+  let ast = parse_macro_input!(input as DeriveInput);
+  let name = ast.ident.clone();
+  let generic =
+    utils::add_trait_bounds(ast.generics.clone(), parse_quote!(Generable));
+  let (impl_generics, ty_generics, where_clause) = generic.split_for_impl();
+  let span = name.span();
+
+  let fields = match &ast.data {
+    Data::Struct(data_struct) => match &data_struct.fields {
+      syn::Fields::Named(field) => &field.named,
+      _ => {
+        return Error::new_spanned(
+          ast,
+          "Generable trait is applicable only to named field",
+        )
+        .to_compile_error()
+        .into();
+      },
+    },
+    _ => {
+      return Error::new_spanned(
+        ast,
+        "Generable trait is applicable only to structs",
+      )
+      .to_compile_error()
+      .into();
+    },
+  };
+  let generable_fields = fields.iter().map(|f| {
+    let name = f.ident.as_ref().unwrap();
+    let f_span = f.span();
+
+    quote_spanned! { f_span =>
+      map.insert(String::from(stringify!(#name)), ::marquage::Generable::generate(self.#name));
+    }
+  });
+
+  let generable_ref_fields = fields.iter().map(|f| {
+    let name = f.ident.as_ref().unwrap();
+    let f_span = f.span();
+
+    quote_spanned! { f_span =>
+      map.insert(String::from(stringify!(#name)), ::marquage::Generable::generate_ref(&self.#name));
+    }
+  });
+
+  let expanded = quote_spanned! { span =>
+    impl #impl_generics ::marquage::Generable for #name #ty_generics #where_clause {
+      fn generate(self) -> ::marquage::data::Value{
+        ::marquage::data::Value::Object({
+          let mut map = indexmap::IndexMap::new();
+          #(#generable_fields)*
+          map
+        })
+      }
+
+      fn generate_ref(&self) -> ::marquage::data::Value {
+        ::marquage::data::Value::Object({
+          let mut map = indexmap::IndexMap::new();
+          #(#generable_ref_fields)*
+          map
+        })
       }
     }
   };
