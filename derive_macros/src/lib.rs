@@ -6,7 +6,7 @@ use syn::{
   Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned,
 };
 
-#[proc_macro_derive(Parse, attributes(rename, default))]
+#[proc_macro_derive(Parse, attributes(rename, default, skip))]
 pub fn parseable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
@@ -49,6 +49,18 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
       Ok(e) => e,
       Err(e) => return e.to_compile_error()
     };
+
+    match utils::is_skip(&f.attrs){
+      Ok(true) => {
+        return quote_spanned! { f_span =>
+          #name: {
+            <#ty as Default>::default()
+          }
+        };
+      },
+      Ok(false) => {/* Do nothing */},
+      Err(e) => return e.to_compile_error()
+    }
 
     if let Some(expr) = raw{
       return quote_spanned! {f_span =>
@@ -93,7 +105,7 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
   TokenStream::from(expanded)
 }
 
-#[proc_macro_derive(Generate, attributes(rename, default))]
+#[proc_macro_derive(Generate, attributes(rename, default, skip))]
 pub fn generable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
@@ -131,6 +143,12 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
     };
     let f_span = f.span();
 
+    match utils::is_skip(&f.attrs){
+      Ok(true) => return proc_macro2::TokenStream::new(),
+      Ok(false) => {/* Do nothing */},
+      Err(e) => return e.to_compile_error()
+    }
+
     quote_spanned! { f_span =>
       map.insert(#rename.to_string(), ::marquage::Generable::generate(self.#name));
     }
@@ -143,6 +161,12 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
       Err(e) => return e.to_compile_error()
     };
     let f_span = f.span();
+
+    match utils::is_skip(&f.attrs){
+      Ok(true) => return proc_macro2::TokenStream::new(),
+      Ok(false) => {/* Do nothing */},
+      Err(e) => return e.to_compile_error()
+    }
 
     quote_spanned! { f_span =>
       map.insert(#rename.to_string(), ::marquage::Generable::generate_ref(&self.#name));

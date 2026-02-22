@@ -133,6 +133,26 @@ pub fn get_default(
   Ok(None)
 }
 
+pub fn is_skip(attributes: &[Attribute]) -> Result<bool, Error> {
+  for attribute in attributes {
+    if !attribute.path().is_ident("skip") {
+      continue;
+    }
+
+    match &attribute.meta {
+      Meta::Path(_) => return Ok(true),
+      _ => {
+        return Err(Error::new(
+          attribute.meta.span(),
+          "#[skip] receive nothing",
+        ));
+      },
+    }
+  }
+
+  Ok(false)
+}
+
 fn generate_conversion(ty: &Type, lit: Lit, span: Span) -> Expr {
   if let Type::Reference(r) = ty
     && r.mutability.is_none()
