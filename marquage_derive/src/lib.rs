@@ -66,7 +66,7 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
       return quote_spanned! {f_span =>
         #name: {
           if let Some(data) = map.swap_remove(#rename) {
-            ::marquage::Parseable::parse(data)?
+            ::marquage_lib::Parseable::parse(data)?
           }else{
             #expr
           }
@@ -77,26 +77,26 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
     quote_spanned! { f_span =>
       #name: {
         if let Some(data) = map.swap_remove(#rename) {
-          ::marquage::Parseable::parse(data)?
+          ::marquage_lib::Parseable::parse(data)?
         }else{
-          return Err(::marquage::error::CastError::FieldNotFound(stringify!(#rename).to_string()));
+          return Err(::marquage_lib::error::CastError::FieldNotFound(stringify!(#rename).to_string()));
         }
       }
     }
   });
 
   let expanded = quote_spanned! { span =>
-    impl #impl_generics ::marquage::Parseable for #name #ty_generics #where_clause {
-      fn parse(v: ::marquage::data::Value) -> Result<Self, ::marquage::error::CastError>{
+    impl #impl_generics ::marquage_lib::Parseable for #name #ty_generics #where_clause {
+      fn parse(v: ::marquage_lib::data::Value) -> Result<Self, ::marquage_lib::error::CastError>{
         match v {
-          ::marquage::data::Value::Object(mut map) => {
+          ::marquage_lib::data::Value::Object(mut map) => {
             Ok(
               Self {
                 #(#parseable_fields),*
               }
             )
           },
-          _ => Err(::marquage::error::CastError::IncompatibleType)
+          _ => Err(::marquage_lib::error::CastError::IncompatibleType)
         }
       }
     }
@@ -150,7 +150,7 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
     }
 
     quote_spanned! { f_span =>
-      map.insert(#rename.to_string(), ::marquage::Generable::generate(self.#name));
+      map.insert(#rename.to_string(), ::marquage_lib::Generable::generate(self.#name));
     }
   });
 
@@ -169,22 +169,22 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
     }
 
     quote_spanned! { f_span =>
-      map.insert(#rename.to_string(), ::marquage::Generable::generate_ref(&self.#name));
+      map.insert(#rename.to_string(), ::marquage_lib::Generable::generate_ref(&self.#name));
     }
   });
 
   let expanded = quote_spanned! { span =>
-    impl #impl_generics ::marquage::Generable for #name #ty_generics #where_clause {
-      fn generate(self) -> ::marquage::data::Value{
-        ::marquage::data::Value::Object({
+    impl #impl_generics ::marquage_lib::Generable for #name #ty_generics #where_clause {
+      fn generate(self) -> ::marquage_lib::data::Value{
+        ::marquage_lib::data::Value::Object({
           let mut map = indexmap::IndexMap::new();
           #(#generable_fields)*
           map
         })
       }
 
-      fn generate_ref(&self) -> ::marquage::data::Value {
-        ::marquage::data::Value::Object({
+      fn generate_ref(&self) -> ::marquage_lib::data::Value {
+        ::marquage_lib::data::Value::Object({
           let mut map = indexmap::IndexMap::new();
           #(#generable_ref_fields)*
           map

@@ -39,7 +39,7 @@ pub fn get_rename(
         _ => {
           return Err(Error::new(
             name_value.value.span(),
-            "rename field only accept a string literal",
+            "`rename` field only accept a string literal",
           ));
         },
       },
@@ -55,7 +55,7 @@ pub fn get_rename(
               },
               _ => Err(Error::new(
                 meta.path.span(),
-                "rename field must be a string literal",
+                "`rename` field must be a string literal",
               )),
             }
           } else {

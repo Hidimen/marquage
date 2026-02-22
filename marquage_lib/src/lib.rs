@@ -1,4 +1,4 @@
-#![doc = include_str!("../../docs/introduction.md")]
+#![doc = include_str!("../../docs/main.md")]
 mod api;
 pub mod data;
 pub mod error;

@@ -1,0 +1,20 @@
+[package]
+name = "marquage"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+proc-macro = false
+
+[dependencies]
+marquage_lib = {path = "../marquage_lib"}
+marquage_derive = {path = "../marquage_derive"}
+
+[features]
+default = ["full"]
+
+derive = []
+core = []
+full = ["derive", "core"]
