@@ -6,7 +6,7 @@ use syn::{
   Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned,
 };
 
-#[proc_macro_derive(Parse, attributes(rename))]
+#[proc_macro_derive(Parse, attributes(rename, default))]
 pub fn parseable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
@@ -36,13 +36,31 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
       .into();
     },
   };
-  let parseable_fields = fields.iter().map(|f| {
+  let parseable_fields = fields.iter().map(|f|  {
     let name = f.ident.as_ref().unwrap();
     let rename = match utils::get_rename(&f.attrs, name.to_string()) {
       Ok(n) => n,
       Err(e) => return e.to_compile_error()
     };
     let f_span = f.span();
+    let ty = &f.ty;
+
+    let raw = match utils::get_default(&f.attrs, ty){
+      Ok(e) => e,
+      Err(e) => return e.to_compile_error()
+    };
+
+    if let Some(expr) = raw{
+      return quote_spanned! {f_span =>
+        #name: {
+          if let Some(data) = map.swap_remove(#rename) {
+            ::marquage::Parseable::parse(data)?
+          }else{
+            #expr
+          }
+        }
+      }
+    }
 
     quote_spanned! { f_span =>
       #name: {
@@ -75,7 +93,7 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
   TokenStream::from(expanded)
 }
 
-#[proc_macro_derive(Generate, attributes(rename))]
+#[proc_macro_derive(Generate, attributes(rename, default))]
 pub fn generable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
