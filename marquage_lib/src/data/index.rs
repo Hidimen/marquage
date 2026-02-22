@@ -1,8 +1,10 @@
 use crate::data::Value;
 
-/// Index data from object or array
+/// Index data from object or array.
 pub trait Index {
+  /// get value ref by indexing.
   fn index_into<'a>(&self, val: &'a Value) -> Option<&'a Value>;
+  /// get value mutable ref by indexing.
   fn index_into_mut<'a>(&self, val: &'a mut Value) -> Option<&'a mut Value>;
 }
 

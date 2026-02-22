@@ -1,4 +1,4 @@
-# Marquage: A simple and easy-to-read markup language
+# Introduction
 
 ## What Marquage
 Marquage is an efficient and easy-to-read markup language. Its syntaxes are similar to JSON, but provide powerful expression ability, including native-supported comment, strings without quotes, etc.
@@ -7,9 +7,10 @@ Its interpreter is built in Rust, so it has high-performance and is safe.
 ## Why Marquage
 There already has many markup language, such as `JSON`, `YAML` and `TOML`. `Marquage` is not designed to replace them, but **provide a totally new way to store data, manage your config files and transfer data.**
 
-## Tutorial
-### Syntax
-#### Data type
+# Tutorial
+We provide clear tutorial to tell you how to build a `marquage` file.
+## Syntax
+### Data type
 There nine different data types:
 |Type|Literal|
 |:----:|:----------:|
@@ -25,7 +26,7 @@ There nine different data types:
 
 **Note**: Interpreter can not distinguish whether a positive integer number has a sign or not. We will fix it in the future.
 
-#### Basic Syntax
+### Basic Syntax
 In Marquage, **every entry must have key and value**. That's means a standard `Marquage` file is composed of different entries. We call entry block.
 
 For example:
@@ -59,4 +60,54 @@ array = [
   }
 ];
 ```
+### Advanced Syntax
+#### string
+Actually, there are two ways representing a string: raw string and quoted string.
+```marquage
+string = raw_string;
+string2 = "quoted_string";
+```
+#### void
+To create a null value, you can:
+```marquage
+null_value = void;
+```
+#### Compound types
+`Marquage` provides nested object and array parsing ability:
+```marquage
+object = {
+  string = "string";
+  number = 1;
+  bool = true;
+  null = void;
+  array = [1,2,3];
+}
 
+array = ["hello", "world", {
+  name = "Alice";
+  age = 20;
+}];
+```
+
+## Library usage
+```rust
+use marquage_lib::{from_str};
+use marquage_derive::{Parse, Generate};
+
+#[derive(Parse, Generate, Debug)]
+struct Person{
+  name: String,
+  age: u8,
+  email: String,
+  married: bool,
+}
+
+let data = r###"
+name = "Alice";
+age = 20;
+email = "alice@example.com";
+married = false;
+"###;
+println!("{:?}", from_str::<Person>(data).unwrap());
+
+```

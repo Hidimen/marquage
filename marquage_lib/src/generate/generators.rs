@@ -3,6 +3,7 @@ use crate::{
   generate::{Config, Generator},
 };
 
+/// A built-in config of [PrettyGenerator].
 #[derive(Default)]
 pub struct PrettyConfig;
 
@@ -36,12 +37,14 @@ impl Config for PrettyConfig {
   }
 }
 
+/// A built-in generator that output a pretty format.
 pub struct PrettyGenerator {
   config: PrettyConfig,
   data: Vec<u8>,
 }
 
 impl PrettyGenerator {
+  /// Create a [PrettyGenerator]
   pub fn create(c: PrettyConfig) -> Self {
     Self { config: c, data: Vec::new() }
   }

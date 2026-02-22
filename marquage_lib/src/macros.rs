@@ -1,3 +1,20 @@
+/// Build a value.
+///
+/// # Example
+/// ```rust
+/// # use marquage_lib::{marquage, data::Value};
+/// # use indexmap::IndexMap;
+/// let val = Value::Object(IndexMap::from([
+///   ("hello".into(), Value::QuotedString("world".into()))
+/// ]));
+///
+/// let v = marquage!{
+///   hello = "world";
+/// };
+/// assert_eq!(v, val);
+/// ```
+///
+/// **Note**: Macro syntax is similar to `marquage` syntax, but semicolon after an object is a must.
 #[macro_export]
 macro_rules! marquage {
   ($($item:ident = $content:tt;)*) => {

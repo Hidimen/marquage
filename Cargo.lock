@@ -28,6 +28,7 @@ dependencies = [
 name = "marquage"
 version = "0.1.0"
 dependencies = [
+ "indexmap",
  "marquage_derive",
  "marquage_lib",
 ]

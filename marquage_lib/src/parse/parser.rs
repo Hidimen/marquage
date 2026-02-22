@@ -3,15 +3,21 @@ use crate::{
   parse::{error::ParserError, lexer::Lexer, literal::Literal, span::Span},
 };
 
+/// A parser parsing tokens from [Lexer].
 pub struct Parser<'parser> {
   lexer: Lexer<'parser>,
 }
 
 impl<'parser> Parser<'parser> {
+  /// Create a parser.
   pub fn new(lexer: Lexer<'parser>) -> Self {
     Self { lexer }
   }
 
+  /// Parse token stream.
+  ///
+  /// # Errors
+  /// [ParserError] will be returned if encounter errors when parsing.
   pub fn parse(mut self) -> Result<Value, ParserError> {
     self.parse_object(false)
   }

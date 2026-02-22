@@ -1,8 +1,15 @@
+//! Convert a string to [Value](crate::data::Value).
 pub mod error;
-pub mod lexer;
-pub mod literal;
-pub mod parser;
+mod lexer;
+mod literal;
+mod parser;
 pub(crate) mod position;
 pub(crate) mod source_map;
-pub mod span;
-pub mod token;
+mod span;
+mod token;
+
+pub use lexer::Lexer;
+pub use literal::Literal;
+pub use parser::Parser;
+pub use span::Span;
+pub use token::Token;

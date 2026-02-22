@@ -3,12 +3,14 @@ use crate::parse::{
   source_map::SourceMap, span::Span, token::Token,
 };
 
+/// A string lexer.
 pub struct Lexer<'lex> {
   map: SourceMap<'lex>,
   pos: Position,
 }
 
 impl<'lex> Lexer<'lex> {
+  /// Create a lexer.
   pub fn new<'raw>(raw: &'raw str) -> Self
   where
     'raw: 'lex,
@@ -16,6 +18,12 @@ impl<'lex> Lexer<'lex> {
     Self { map: SourceMap::new(raw), pos: Position(1, 1) }
   }
 
+  /// Lex next token.
+  ///
+  /// This operation is lazy, which means [Lexer] only makes progress when called `lex`.
+  ///
+  /// # Errors
+  /// [LexerError] will be returned if encounter an error when lexing.
   pub fn lex(&mut self) -> Result<Token, LexerError> {
     if let Some((s, offset)) = self.skipping_advance() {
       let legacy_pos = self.pos.add_column_by(1);

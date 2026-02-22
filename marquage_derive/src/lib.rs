@@ -6,6 +6,7 @@ use syn::{
   Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned,
 };
 
+/// A derive macro that automatically implement `Parseable` for a struct.
 #[proc_macro_derive(Parse, attributes(rename, default, skip))]
 pub fn parseable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
@@ -105,6 +106,7 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
   TokenStream::from(expanded)
 }
 
+/// A derive macro that automatically implement `Generable` for a struct.
 #[proc_macro_derive(Generate, attributes(rename, default, skip))]
 pub fn generable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);

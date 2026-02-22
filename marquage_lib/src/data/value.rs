@@ -1,18 +1,23 @@
 use std::fmt::Display;
 
-use indexmap::IndexMap;
 use paste::paste;
 
 use crate::{Generable, Parseable};
 
 use super::index::Index;
 
-/// Values that represent data structure in `Marquage`
+/// Storing object data, using [indexmap](https://docs.rs/indexmap/latest/indexmap/) to implement order storage.
+pub type ObjectImpl = indexmap::IndexMap<String, Value>;
+/// Storing array data.
+pub type ArrayImpl = Vec<Value>;
+
+/// Values that represent data structure in `Marquage`.
 ///
 /// |[`Value`]|Data Structure|
 /// |:-:|:-:|
 /// |Void|void|
-/// |String|"string"<br>string<br>'string'|
+/// |RawString|string|
+/// |QuotedString|"string"|
 /// |Boolean|true<br>false|
 /// |FloatNumber|0.1<br>-0.1|
 /// |UnsignedIntegerNumber|1|
@@ -21,20 +26,28 @@ use super::index::Index;
 /// |Array|[]|
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
+  /// Representing literal `void`.
   Void,
 
+  // Representing quoted string.
   QuotedString(String),
+  // Representing raw string.
   RawString(String),
 
+  /// Representing boolean.
   Boolean(bool),
 
+  /// Representing float number.
   FloatNumber(f32),
+  /// Representing unsigned integer number.
   UnsignedIntegerNumber(u32),
+  /// Representing signed integer number.
   SignedIntegerNumber(i32),
 
-  Object(IndexMap<String, Value>),
-
-  Array(Vec<Value>),
+  /// Representing an object.
+  Object(ObjectImpl),
+  /// Representing an array.
+  Array(ArrayImpl),
 }
 
 impl<T> std::ops::Index<T> for Value
@@ -67,54 +80,62 @@ where
 macro_rules! impl_enum_methods {
   ($name:ident, $variant:ident, $ret:ty) => {
     paste! {
-        pub fn [<is_ $name>](&self) -> bool {
-            matches!(self, Self::$variant(_))
-        }
+      #[doc = "check if value is " $name "."]
+      pub fn [<is_ $name>](&self) -> bool {
+          matches!(self, Self::$variant(_))
+      }
 
-        pub fn [<as_ $name _ref>](&self) -> Option<&$ret> {
-            match self {
-                Self::$variant(obj) => Some(obj),
-                _ => None,
-            }
+      #[doc = "get content ref of " $name "."]
+      pub fn [<as_ $name _ref>](&self) -> Option<&$ret> {
+        match self {
+          Self::$variant(obj) => Some(obj),
+          _ => None,
         }
+      }
 
-        pub fn [<as_ $name _mut>](&mut self) -> Option<&mut $ret> {
-            match self {
-                Self::$variant(obj) => Some(obj),
-                _ => None,
-            }
+      #[doc = "get mutable content ref of " $name "."]
+      pub fn [<as_ $name _mut>](&mut self) -> Option<&mut $ret> {
+        match self {
+          Self::$variant(obj) => Some(obj),
+          _ => None,
         }
+      }
 
-        pub fn [<as_ $name>](self) -> Option<$ret> {
-            match self {
-                Self::$variant(obj) => Some(obj),
-                _ => None,
-            }
+      #[doc = "get content of " $name "."]
+      pub fn [<as_ $name>](self) -> Option<$ret> {
+        match self {
+          Self::$variant(obj) => Some(obj),
+          _ => None,
         }
+      }
     }
   };
 }
 
 impl Value {
-  impl_enum_methods!(object, Object, IndexMap<String,Value>);
-  impl_enum_methods!(array, Array, Vec<Value>);
+  impl_enum_methods!(object, Object, ObjectImpl);
+  impl_enum_methods!(array, Array, ArrayImpl);
   impl_enum_methods!(boolean, Boolean, bool);
   impl_enum_methods!(unsigned_number, UnsignedIntegerNumber, u32);
   impl_enum_methods!(signed_number, SignedIntegerNumber, i32);
   impl_enum_methods!(float_number, FloatNumber, f32);
 
+  #[doc = "check if value is void."]
   pub fn is_void(&self) -> bool {
     matches!(self, Self::Void)
   }
 
+  #[doc = "check if value is quoted string."]
   pub fn is_quoted_string(&self) -> bool {
     matches!(self, Self::QuotedString(..))
   }
 
+  #[doc = "check if value is raw string."]
   pub fn is_raw_string(&self) -> bool {
     matches!(self, Self::RawString(..))
   }
 
+  #[doc = "get content ref of string."]
   pub fn as_string_ref(&self) -> Option<&String> {
     match self {
       Self::QuotedString(s) | Self::RawString(s) => Some(s),
@@ -122,6 +143,7 @@ impl Value {
     }
   }
 
+  #[doc = "get mutable content ref of string."]
   pub fn as_string_mut(&mut self) -> Option<&mut String> {
     match self {
       Self::QuotedString(s) | Self::RawString(s) => Some(s),
@@ -129,6 +151,7 @@ impl Value {
     }
   }
 
+  #[doc = "get content of string."]
   pub fn as_string(self) -> Option<String> {
     match self {
       Self::QuotedString(s) | Self::RawString(s) => Some(s),

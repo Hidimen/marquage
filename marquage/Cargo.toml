@@ -9,8 +9,9 @@ license.workspace = true
 proc-macro = false
 
 [dependencies]
-marquage_lib = {path = "../marquage_lib"}
-marquage_derive = {path = "../marquage_derive"}
+marquage_lib = { path = "../marquage_lib" }
+marquage_derive = { path = "../marquage_derive" }
+indexmap = { workspace = true }
 
 [features]
 default = ["full"]

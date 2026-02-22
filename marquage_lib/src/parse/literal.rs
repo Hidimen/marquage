@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+/// Representing a literal.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
   Void,

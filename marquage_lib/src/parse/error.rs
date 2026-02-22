@@ -1,14 +1,22 @@
+//! Parse module's error.
 use std::{error::Error, fmt::Display};
 
 use crate::parse::{literal::Literal, span::Span};
 
+/// Lexer error.
 #[derive(Debug)]
 pub enum LexerError {
+  /// An unexpected literal detected.
   UnexpectedLiteral { literal: String, span: Span },
+  /// Invalid float number format.
   NonNumberAfterDot { span: Span },
+  /// Unexpected end.
   UnexpectedInterruption,
+  /// Unexpected newline in a string.
   UnexpectedNewline { span: Span },
+  /// Broken escape string format.
   IncompleteEscape { span: Span },
+  /// Unknown escape.
   UndefinedEscape { span: Span },
 }
 
@@ -64,15 +72,24 @@ impl Display for LexerError {
 
 impl Error for LexerError {}
 
+/// Parser error
 #[derive(Debug)]
 pub enum ParserError {
+  /// Representing [LexerError].
   LexingError(LexerError),
+  /// Expect a key.
   ExpectKey(Literal, Span),
+  /// Expect a value.
   ExpectValue(Literal, Span),
+  /// Expect a brace.
   ExpectBrace(Literal, Span),
+  /// Expect an equal mark.
   ExpectEqual(Literal, Span),
+  /// Expect a semicolon.
   ExpectSemicolon(Literal, Span),
+  /// Expect a comma or a close bracket.
   ExpectCommaOrCloseBracket(Literal, Span),
+  /// Unexpected close brace.
   UnexpectedCloseBrace(Span),
 }
 
