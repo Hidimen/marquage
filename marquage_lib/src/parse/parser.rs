@@ -1,4 +1,5 @@
 use crate::{
+  Map,
   data::Value,
   parse::{error::ParserError, lexer::Lexer, literal::Literal, span::Span},
 };
@@ -23,7 +24,7 @@ impl<'parser> Parser<'parser> {
   }
 
   fn parse_object(&mut self, check_brace: bool) -> Result<Value, ParserError> {
-    let mut map = indexmap::IndexMap::<String, Value>::new();
+    let mut map = Map::new();
     loop {
       let token = self.lexer.lex()?;
       let (literal, span) = token.split();
@@ -94,11 +95,7 @@ impl<'parser> Parser<'parser> {
   fn check_brace(&mut self) -> Result<(), ParserError> {
     let token = self.lexer.lex()?;
     let (literal, span) = token.split();
-    if literal.is_close_brace() {
-      Ok(())
-    } else {
-      Err(ParserError::ExpectBrace(literal, span))
-    }
+    if literal.is_close_brace() { Ok(()) } else { Err(ParserError::ExpectBrace(literal, span)) }
   }
 
   fn check_semicolon(&mut self, other: &Span) -> Result<(), ParserError> {
@@ -121,9 +118,7 @@ impl<'parser> Parser<'parser> {
     }
   }
 
-  fn check_element(
-    &mut self, literal: Literal, span: Span,
-  ) -> Result<Value, ParserError> {
+  fn check_element(&mut self, literal: Literal, span: Span) -> Result<Value, ParserError> {
     match literal {
       Literal::Boolean(b) => Ok(Value::Boolean(b)),
       Literal::FloatNumber(f) => Ok(Value::FloatNumber(f)),
@@ -138,24 +133,14 @@ impl<'parser> Parser<'parser> {
     }
   }
 
-  fn expect_value(
-    &mut self, other: &Span,
-  ) -> Result<(Value, bool), ParserError> {
+  fn expect_value(&mut self, other: &Span) -> Result<(Value, bool), ParserError> {
     let token = self.lexer.lex()?;
     let (literal, span) = token.split();
     match literal {
-      Literal::Boolean(b) if span.is_same_line(other) => {
-        Ok((Value::Boolean(b), true))
-      },
-      Literal::FloatNumber(f) if span.is_same_line(other) => {
-        Ok((Value::FloatNumber(f), true))
-      },
-      Literal::QuotedString(s) if span.is_same_line(other) => {
-        Ok((Value::QuotedString(s), true))
-      },
-      Literal::RawString(s) if span.is_same_line(other) => {
-        Ok((Value::RawString(s), true))
-      },
+      Literal::Boolean(b) if span.is_same_line(other) => Ok((Value::Boolean(b), true)),
+      Literal::FloatNumber(f) if span.is_same_line(other) => Ok((Value::FloatNumber(f), true)),
+      Literal::QuotedString(s) if span.is_same_line(other) => Ok((Value::QuotedString(s), true)),
+      Literal::RawString(s) if span.is_same_line(other) => Ok((Value::RawString(s), true)),
       Literal::SignedIntegerNumber(n) if span.is_same_line(other) => {
         Ok((Value::SignedIntegerNumber(n), true))
       },

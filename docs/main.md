@@ -91,8 +91,7 @@ array = ["hello", "world", {
 
 ## Library usage
 ```rust
-use marquage_lib::{from_str};
-use marquage_derive::{Parse, Generate};
+use marquage::{ from_str, Generate, Parse };
 
 #[derive(Parse, Generate, Debug)]
 struct Person{

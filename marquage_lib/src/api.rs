@@ -33,8 +33,6 @@ pub fn from_slice<T: Parseable>(data: &[u8]) -> Result<T, Error> {
 ///
 /// # Safety
 /// Ensure that [u8] slice represents a valid UTF-8 string.
-pub unsafe fn from_slice_unchecked<T: Parseable>(
-  data: &[u8],
-) -> Result<T, Error> {
+pub unsafe fn from_slice_unchecked<T: Parseable>(data: &[u8]) -> Result<T, Error> {
   from_str(unsafe { std::str::from_utf8_unchecked(data) })
 }

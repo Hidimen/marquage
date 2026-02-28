@@ -44,11 +44,7 @@ impl Literal {
   }
 
   pub fn get_string(self) -> Option<String> {
-    if let Self::RawString(s) | Self::QuotedString(s) = self {
-      Some(s)
-    } else {
-      None
-    }
+    if let Self::RawString(s) | Self::QuotedString(s) = self { Some(s) } else { None }
   }
 
   pub fn is_quoted_string(&self) -> bool {

@@ -1,6 +1,4 @@
-use indexmap::IndexMap;
-
-use crate::data::Value;
+use crate::{Map, data::Value};
 
 macro_rules! impl_from_for_unsigned {
     ($($ty:ident),*) => {
@@ -58,12 +56,9 @@ impl From<()> for Value {
   }
 }
 
-impl<T> From<IndexMap<String, T>> for Value
-where
-  T: Into<Value>,
-{
-  fn from(value: IndexMap<String, T>) -> Self {
-    Value::Object(value.into_iter().map(|(k, v)| (k, v.into())).collect())
+impl From<Map> for Value {
+  fn from(value: Map) -> Self {
+    Value::Object(value.into_iter().collect())
   }
 }
 

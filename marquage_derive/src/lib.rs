@@ -179,7 +179,7 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
     impl #impl_generics ::marquage_lib::Generable for #name #ty_generics #where_clause {
       fn generate(self) -> ::marquage_lib::data::Value{
         ::marquage_lib::data::Value::Object({
-          let mut map = indexmap::IndexMap::new();
+          let mut map = ::marquage_lib::Map::new();
           #(#generable_fields)*
           map
         })
@@ -187,7 +187,7 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
 
       fn generate_ref(&self) -> ::marquage_lib::data::Value {
         ::marquage_lib::data::Value::Object({
-          let mut map = indexmap::IndexMap::new();
+          let mut map = ::marquage_lib::Map::new();
           #(#generable_ref_fields)*
           map
         })

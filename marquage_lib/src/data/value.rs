@@ -2,14 +2,9 @@ use std::fmt::Display;
 
 use paste::paste;
 
-use crate::{Generable, Parseable};
+use crate::{Generable, Map, Parseable};
 
 use super::index::Index;
-
-/// Storing object data, using [indexmap](https://docs.rs/indexmap/latest/indexmap/) to implement order storage.
-pub type ObjectImpl = indexmap::IndexMap<String, Value>;
-/// Storing array data.
-pub type ArrayImpl = Vec<Value>;
 
 /// Values that represent data structure in `Marquage`.
 ///
@@ -45,9 +40,9 @@ pub enum Value {
   SignedIntegerNumber(i32),
 
   /// Representing an object.
-  Object(ObjectImpl),
+  Object(Map),
   /// Representing an array.
-  Array(ArrayImpl),
+  Array(Vec<Value>),
 }
 
 impl<T> std::ops::Index<T> for Value
@@ -113,8 +108,8 @@ macro_rules! impl_enum_methods {
 }
 
 impl Value {
-  impl_enum_methods!(object, Object, ObjectImpl);
-  impl_enum_methods!(array, Array, ArrayImpl);
+  impl_enum_methods!(object, Object, Map);
+  impl_enum_methods!(array, Array, Vec<Value>);
   impl_enum_methods!(boolean, Boolean, bool);
   impl_enum_methods!(unsigned_number, UnsignedIntegerNumber, u32);
   impl_enum_methods!(signed_number, SignedIntegerNumber, i32);
@@ -175,7 +170,7 @@ macro_rules! impl_p_for_unsigned {
   };
 }
 
-impl_p_for_unsigned!(u8, u16, u32, u64, u128);
+impl_p_for_unsigned!(u8, u16, u32, u64, u128, usize);
 
 macro_rules! impl_p_for_signed {
   ($($i: ident),*) => {
@@ -192,7 +187,7 @@ macro_rules! impl_p_for_signed {
   };
 }
 
-impl_p_for_signed!(i8, i16, i32, i64, i128);
+impl_p_for_signed!(i8, i16, i32, i64, i128, isize);
 
 impl Parseable for bool {
   fn parse(v: Value) -> Result<Self, crate::error::CastError> {
@@ -330,7 +325,7 @@ macro_rules! impl_g_for_unsigned {
     )*
   };
 }
-impl_g_for_unsigned!(u8, u16, u32, u64, u128);
+impl_g_for_unsigned!(u8, u16, u32, u64, u128, usize);
 
 macro_rules! impl_g_for_signed {
   ($($i: ident),*) => {
@@ -348,7 +343,7 @@ macro_rules! impl_g_for_signed {
   };
 }
 
-impl_g_for_signed!(i8, i16, i32, i64, i128);
+impl_g_for_signed!(i8, i16, i32, i64, i128, isize);
 
 impl Generable for bool {
   fn generate(self) -> Value {

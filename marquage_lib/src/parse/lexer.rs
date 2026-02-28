@@ -1,6 +1,6 @@
 use crate::parse::{
-  error::LexerError, literal::Literal, position::Position,
-  source_map::SourceMap, span::Span, token::Token,
+  error::LexerError, literal::Literal, position::Position, source_map::SourceMap, span::Span,
+  token::Token,
 };
 
 /// A string lexer.
@@ -29,18 +29,12 @@ impl<'lex> Lexer<'lex> {
       let legacy_pos = self.pos.add_column_by(1);
       let current_pos = self.pos;
       match s {
-        "{" => Ok(Self::create_token(
-          Literal::OpenBrace,
-          legacy_pos,
-          current_pos,
-          (offset, offset + 1),
-        )),
-        "}" => Ok(Self::create_token(
-          Literal::CloseBrace,
-          legacy_pos,
-          current_pos,
-          (offset, offset + 1),
-        )),
+        "{" => {
+          Ok(Self::create_token(Literal::OpenBrace, legacy_pos, current_pos, (offset, offset + 1)))
+        },
+        "}" => {
+          Ok(Self::create_token(Literal::CloseBrace, legacy_pos, current_pos, (offset, offset + 1)))
+        },
         "[" => Ok(Self::create_token(
           Literal::OpenBracket,
           legacy_pos,
@@ -53,48 +47,26 @@ impl<'lex> Lexer<'lex> {
           current_pos,
           (offset, offset + 1),
         )),
-        "(" => Ok(Self::create_token(
-          Literal::OpenParen,
-          legacy_pos,
-          current_pos,
-          (offset, offset + 1),
-        )),
-        ")" => Ok(Self::create_token(
-          Literal::CloseParen,
-          legacy_pos,
-          current_pos,
-          (offset, offset + 1),
-        )),
-        ";" => Ok(Self::create_token(
-          Literal::Semicolon,
-          legacy_pos,
-          current_pos,
-          (offset, offset + 1),
-        )),
-        "," => Ok(Self::create_token(
-          Literal::Comma,
-          legacy_pos,
-          current_pos,
-          (offset, offset + 1),
-        )),
-        "@" => Ok(Self::create_token(
-          Literal::At,
-          legacy_pos,
-          current_pos,
-          (offset, offset + 1),
-        )),
-        "=" => Ok(Self::create_token(
-          Literal::Equal,
-          legacy_pos,
-          current_pos,
-          (offset, offset + 1),
-        )),
+        "(" => {
+          Ok(Self::create_token(Literal::OpenParen, legacy_pos, current_pos, (offset, offset + 1)))
+        },
+        ")" => {
+          Ok(Self::create_token(Literal::CloseParen, legacy_pos, current_pos, (offset, offset + 1)))
+        },
+        ";" => {
+          Ok(Self::create_token(Literal::Semicolon, legacy_pos, current_pos, (offset, offset + 1)))
+        },
+        "," => {
+          Ok(Self::create_token(Literal::Comma, legacy_pos, current_pos, (offset, offset + 1)))
+        },
+        "@" => Ok(Self::create_token(Literal::At, legacy_pos, current_pos, (offset, offset + 1))),
+        "=" => {
+          Ok(Self::create_token(Literal::Equal, legacy_pos, current_pos, (offset, offset + 1)))
+        },
         "-" => self.handle_number(offset, legacy_pos, true),
         "#" => Ok(self.handle_comment(offset, legacy_pos)),
         "\"" => self.handle_quoted_string(offset, legacy_pos),
-        other if self.is_digital(other) => {
-          self.handle_number(offset, legacy_pos, false)
-        },
+        other if self.is_digital(other) => self.handle_number(offset, legacy_pos, false),
         "v" => self.handle_void(offset, legacy_pos),
         "t" => self.handle_true(offset, legacy_pos),
         "f" => self.handle_false(offset, legacy_pos),
@@ -105,9 +77,7 @@ impl<'lex> Lexer<'lex> {
     }
   }
 
-  fn handle_void(
-    &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token, LexerError> {
+  fn handle_void(&mut self, start_offset: usize, start: Position) -> Result<Token, LexerError> {
     let remains = ["o", "i", "d"];
     for i in remains {
       if let Some((s, _)) = self.advance()
@@ -133,12 +103,7 @@ impl<'lex> Lexer<'lex> {
         || p == "}"
         || p == ")")
     {
-      Ok(Self::create_token(
-        Literal::Void,
-        start,
-        self.pos,
-        (start_offset, self.current_offset()),
-      ))
+      Ok(Self::create_token(Literal::Void, start, self.pos, (start_offset, self.current_offset())))
     } else {
       self.map.move_to(start_offset);
       self.pos = start;
@@ -146,9 +111,7 @@ impl<'lex> Lexer<'lex> {
     }
   }
 
-  fn handle_true(
-    &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token, LexerError> {
+  fn handle_true(&mut self, start_offset: usize, start: Position) -> Result<Token, LexerError> {
     let remains = ["r", "u", "e"];
     for i in remains {
       if let Some((s, _)) = self.advance()
@@ -187,9 +150,7 @@ impl<'lex> Lexer<'lex> {
     }
   }
 
-  fn handle_false(
-    &mut self, start_offset: usize, start: Position,
-  ) -> Result<Token, LexerError> {
+  fn handle_false(&mut self, start_offset: usize, start: Position) -> Result<Token, LexerError> {
     let remains = ["a", "l", "s", "e"];
     for i in remains {
       if let Some((s, _)) = self.advance()
@@ -237,17 +198,11 @@ impl<'lex> Lexer<'lex> {
       match s {
         "\r" | "\n" => {
           return Err(LexerError::UnexpectedNewline {
-            span: Span::new(
-              start,
-              self.pos,
-              (start_offset, self.current_offset()),
-            ),
+            span: Span::new(start, self.pos, (start_offset, self.current_offset())),
           });
         },
         "\"" => {
-          buffer.extend_from_slice(
-            self.map.get_by_offset(cache, offset).as_bytes(),
-          );
+          buffer.extend_from_slice(self.map.get_by_offset(cache, offset).as_bytes());
           self.pos.add_column();
           return Ok(Self::create_token(
             Literal::QuotedString(String::from_utf8_lossy(&buffer).to_string()),
@@ -262,10 +217,7 @@ impl<'lex> Lexer<'lex> {
               self.consume();
               self.pos.add_column();
               buffer.extend_from_slice(
-                self
-                  .map
-                  .get_by_offset(cache, self.current_offset() - 2)
-                  .as_bytes(),
+                self.map.get_by_offset(cache, self.current_offset() - 2).as_bytes(),
               );
               buffer.extend_from_slice(b"\n");
               cache = self.current_offset();
@@ -274,10 +226,7 @@ impl<'lex> Lexer<'lex> {
               self.consume();
               self.pos.add_column();
               buffer.extend_from_slice(
-                self
-                  .map
-                  .get_by_offset(cache, self.current_offset() - 2)
-                  .as_bytes(),
+                self.map.get_by_offset(cache, self.current_offset() - 2).as_bytes(),
               );
               buffer.extend_from_slice(b"\r");
               cache = self.current_offset();
@@ -286,10 +235,7 @@ impl<'lex> Lexer<'lex> {
               self.consume();
               self.pos.add_column();
               buffer.extend_from_slice(
-                self
-                  .map
-                  .get_by_offset(cache, self.current_offset() - 2)
-                  .as_bytes(),
+                self.map.get_by_offset(cache, self.current_offset() - 2).as_bytes(),
               );
               buffer.extend_from_slice(b"\t");
               cache = self.current_offset();
@@ -348,16 +294,10 @@ impl<'lex> Lexer<'lex> {
           self.back();
           break;
         },
-        other
-          if other == "[" || other == "{" || other == "(" || other == "\"" =>
-        {
+        other if other == "[" || other == "{" || other == "(" || other == "\"" => {
           return Err(LexerError::UnexpectedLiteral {
             literal: other.into(),
-            span: Span::new(
-              start,
-              self.pos,
-              (self.current_offset() - 1, self.current_offset()),
-            ),
+            span: Span::new(start, self.pos, (self.current_offset() - 1, self.current_offset())),
           });
         },
         "." => {
@@ -384,11 +324,7 @@ impl<'lex> Lexer<'lex> {
     if neg {
       Ok(Self::create_token(
         Literal::SignedIntegerNumber(
-          self
-            .map
-            .get_by_offset(start_offset, self.current_offset())
-            .parse()
-            .unwrap(),
+          self.map.get_by_offset(start_offset, self.current_offset()).parse().unwrap(),
         ),
         start,
         self.pos,
@@ -397,11 +333,7 @@ impl<'lex> Lexer<'lex> {
     } else {
       Ok(Self::create_token(
         Literal::UnsignedIntegerNumber(
-          self
-            .map
-            .get_by_offset(start_offset, self.current_offset())
-            .parse()
-            .unwrap(),
+          self.map.get_by_offset(start_offset, self.current_offset()).parse().unwrap(),
         ),
         start,
         self.pos,
@@ -419,16 +351,10 @@ impl<'lex> Lexer<'lex> {
           self.back();
           break;
         },
-        other
-          if other == "[" || other == "{" || other == "(" || other == "\"" =>
-        {
+        other if other == "[" || other == "{" || other == "(" || other == "\"" => {
           return Err(LexerError::UnexpectedLiteral {
             literal: other.into(),
-            span: Span::new(
-              start,
-              self.pos,
-              (self.current_offset() - 1, self.current_offset()),
-            ),
+            span: Span::new(start, self.pos, (self.current_offset() - 1, self.current_offset())),
           });
         },
         other if self.is_digital(other) => {
@@ -443,11 +369,7 @@ impl<'lex> Lexer<'lex> {
 
     Ok(Self::create_token(
       Literal::FloatNumber(
-        self
-          .map
-          .get_by_offset(start_offset, self.current_offset())
-          .parse()
-          .unwrap(),
+        self.map.get_by_offset(start_offset, self.current_offset()).parse().unwrap(),
       ),
       start,
       self.pos,
@@ -464,16 +386,10 @@ impl<'lex> Lexer<'lex> {
           self.back();
           break;
         },
-        other
-          if other == "[" || other == "{" || other == "(" || other == "\"" =>
-        {
+        other if other == "[" || other == "{" || other == "(" || other == "\"" => {
           return Err(LexerError::UnexpectedLiteral {
             literal: other.into(),
-            span: Span::new(
-              start,
-              self.pos,
-              (self.current_offset() - 1, self.current_offset()),
-            ),
+            span: Span::new(start, self.pos, (self.current_offset() - 1, self.current_offset())),
           });
         },
         _ => {
@@ -484,9 +400,7 @@ impl<'lex> Lexer<'lex> {
     }
 
     Ok(Self::create_token(
-      Literal::RawString(
-        self.map.get_by_offset(start_offset, self.current_offset()).into(),
-      ),
+      Literal::RawString(self.map.get_by_offset(start_offset, self.current_offset()).into()),
       start,
       self.pos,
       (start_offset, self.current_offset()),

@@ -1,4 +1,4 @@
-use crate::data::Value;
+use crate::{Map, data::Value};
 
 /// Base of every generator.
 pub trait Generator {
@@ -6,7 +6,7 @@ pub trait Generator {
   ///
   /// # Returns
   /// Content is determined on exact map data.
-  fn generate(self, v: indexmap::IndexMap<String, Value>) -> String;
+  fn generate(self, v: Map) -> String;
 
   /// Write bytes.
   fn write(&mut self, data: &[u8]);
@@ -18,9 +18,7 @@ pub trait Generator {
   /// Write an array.
   fn write_array(&mut self, v: Vec<Value>, layer: usize);
   /// Write an object.
-  fn write_object(
-    &mut self, v: indexmap::IndexMap<String, Value>, layer: usize,
-  );
+  fn write_object(&mut self, v: Map, layer: usize);
   /// Write a raw string.
   fn write_raw_string(&mut self, v: String);
   /// Write a quoted string.

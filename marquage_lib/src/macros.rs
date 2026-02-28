@@ -2,9 +2,8 @@
 ///
 /// # Example
 /// ```rust
-/// # use marquage_lib::{marquage, data::Value};
-/// # use indexmap::IndexMap;
-/// let val = Value::Object(IndexMap::from([
+/// # use marquage_lib::{marquage, data::Value, Map};
+/// let val = Value::Object(Map::from([
 ///   ("hello".into(), Value::QuotedString("world".into()))
 /// ]));
 ///
@@ -19,7 +18,7 @@
 macro_rules! marquage {
   ($($item:ident = $content:tt;)*) => {
     $crate::data::Value::Object({
-      let mut map = indexmap::IndexMap::new();
+      let mut map = $crate::Map::new();
       $(map.insert(stringify!($item).to_string(), $crate::marquage_impl!(@value $content));)*
       map
     })
@@ -40,13 +39,13 @@ macro_rules! marquage_impl {
   };
   (@value {}) => {
     $crate::data::Value::Object({
-      let map = indexmap::IndexMap::new();
+      let map = $crate::Map::new();;
       map
     })
   };
   (@value { $( $key:ident = $value: tt;)* }) => {
     $crate::data::Value::Object({
-      let mut map = indexmap::IndexMap::new();
+      let mut map = $crate::Map::new();;
       $(map.insert(stringify!($key).to_string(), $crate::marquage_impl!(@value $value));)*
       map
     })

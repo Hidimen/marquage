@@ -4,4 +4,4 @@ mod index;
 mod value;
 
 pub use index::Index;
-pub use value::{ArrayImpl, ObjectImpl, Value};
+pub use value::Value;

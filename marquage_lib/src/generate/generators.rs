@@ -1,4 +1,5 @@
 use crate::{
+  Map,
   data::Value,
   generate::{Config, Generator},
 };
@@ -59,7 +60,7 @@ impl PrettyGenerator {
 }
 
 impl Generator for PrettyGenerator {
-  fn generate(mut self, v: indexmap::IndexMap<String, Value>) -> String {
+  fn generate(mut self, v: Map) -> String {
     self.write_object(v, 0);
     unsafe { String::from_utf8_unchecked(self.data) }
   }
@@ -128,9 +129,7 @@ impl Generator for PrettyGenerator {
     self.write_byte(b']');
   }
 
-  fn write_object(
-    &mut self, v: indexmap::IndexMap<String, Value>, layer: usize,
-  ) {
+  fn write_object(&mut self, v: Map, layer: usize) {
     if layer != 0 {
       self.write_byte(b'{');
     }
@@ -259,7 +258,7 @@ impl CompactGenerator {
 }
 
 impl Generator for CompactGenerator {
-  fn generate(self, v: indexmap::IndexMap<String, Value>) -> String {
+  fn generate(self, v: Map) -> String {
     self.inner.generate(v)
   }
 
@@ -283,9 +282,7 @@ impl Generator for CompactGenerator {
     self.inner.write_float(v);
   }
 
-  fn write_object(
-    &mut self, v: indexmap::IndexMap<String, Value>, layer: usize,
-  ) {
+  fn write_object(&mut self, v: Map, layer: usize) {
     self.inner.write_object(v, layer);
   }
 

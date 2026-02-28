@@ -27,9 +27,7 @@ impl<'a> SourceMap<'a> {
     Self { code, offset: 0, offsets }
   }
 
-  pub fn advance(
-    &mut self,
-  ) -> Option<(&'a str, /* represents the offset of character*/ usize)> {
+  pub fn advance(&mut self) -> Option<(&'a str, /* represents the offset of character*/ usize)> {
     if self.is_end() {
       return None;
     }

@@ -23,10 +23,7 @@ impl Span {
   /// If two span have intersection area, a set of offsets will be returned, otherwise a None will be returned.
   fn merge_offset(&self, other: &Self) -> Option<(usize, usize)> {
     if self.offset.1 >= other.offset.0 && other.offset.1 >= self.offset.0 {
-      Some((
-        self.offset.0.min(other.offset.0),
-        self.offset.1.max(other.offset.1),
-      ))
+      Some((self.offset.0.min(other.offset.0), self.offset.1.max(other.offset.1)))
     } else {
       None
     }
