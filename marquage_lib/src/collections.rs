@@ -1,13 +1,11 @@
 use std::{
-  borrow::Borrow,
-  hash::Hash,
-  ops::{Index, IndexMut},
+  borrow::Borrow, fmt::Debug, hash::Hash, ops::{Index, IndexMut}
 };
 
 use crate::data::Value;
 
 /// Representing map's data.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct Map {
   inner: indexmap::IndexMap<String, Value>,
 }
@@ -236,5 +234,11 @@ impl<'a> IntoIterator for &'a mut Map {
 impl<const N: usize> From<[(String, Value); N]> for Map {
   fn from(value: [(String, Value); N]) -> Self {
     Self { inner: indexmap::IndexMap::from(value) }
+  }
+}
+
+impl Debug for Map {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    self.inner.fmt(f)
   }
 }
