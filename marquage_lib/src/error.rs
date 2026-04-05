@@ -1,5 +1,5 @@
 //! Library error.
-use std::fmt::Display;
+use std::{fmt::Display, io};
 
 use crate::parse::error::ParserError;
 
@@ -33,6 +33,8 @@ pub enum Error {
   Parse(ParserError),
   /// A [u8] slice is an invalid UTF-8 string.
   InvalidSlice,
+  /// Representing [std::io::Error].
+  IOError(io::Error),
 }
 
 impl Display for Error {
@@ -41,6 +43,7 @@ impl Display for Error {
       Self::Cast(c) => write!(f, "{c}"),
       Self::Parse(p) => write!(f, "{p}"),
       Self::InvalidSlice => write!(f, "Slice is not a valid UTF-8 dataset"),
+      Self::IOError(e) => write!(f, "{e}"),
     }
   }
 }
@@ -56,5 +59,11 @@ impl From<CastError> for Error {
 impl From<ParserError> for Error {
   fn from(value: ParserError) -> Self {
     Self::Parse(value)
+  }
+}
+
+impl From<io::Error> for Error {
+  fn from(value: io::Error) -> Self {
+    Self::IOError(value)
   }
 }

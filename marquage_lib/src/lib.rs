@@ -9,7 +9,7 @@ mod parseable;
 mod macros;
 mod collections;
 
-pub use api::{from_slice, from_slice_unchecked, from_str};
+pub use api::{from_file, from_slice, from_slice_unchecked, from_str};
 pub use collections::Map;
 pub use generable::Generable;
 pub use parseable::Parseable;
