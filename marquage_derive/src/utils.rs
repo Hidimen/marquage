@@ -1,12 +1,10 @@
 use proc_macro2::Span;
 use syn::{
-  Attribute, Error, Expr, GenericParam, Generics, Lit, Meta, Type,
-  TypeParamBound, parse_quote_spanned, spanned::Spanned,
+  Attribute, Error, Expr, GenericParam, Generics, Lit, Meta, Type, TypeParamBound,
+  parse_quote_spanned, spanned::Spanned,
 };
 
-pub fn add_trait_bounds(
-  mut generics: Generics, bound: TypeParamBound,
-) -> Generics {
+pub fn add_trait_bounds(mut generics: Generics, bound: TypeParamBound) -> Generics {
   for param in &mut generics.params {
     if let GenericParam::Type(type_param) = param {
       type_param.bounds.push(bound.clone());
@@ -15,9 +13,7 @@ pub fn add_trait_bounds(
   generics
 }
 
-pub fn get_rename(
-  attributes: &[Attribute], ident_name: String,
-) -> Result<String, Error> {
+pub fn get_rename(attributes: &[Attribute], ident_name: String) -> Result<String, Error> {
   for attribute in attributes {
     if !attribute.path().is_ident("rename") {
       continue;
@@ -30,10 +26,7 @@ pub fn get_rename(
             return Ok(s.value());
           },
           _ => {
-            return Err(Error::new(
-              literal.span(),
-              "expect string literal, but found others",
-            ));
+            return Err(Error::new(literal.span(), "expect string literal, but found others"));
           },
         },
         _ => {
@@ -53,18 +46,14 @@ pub fn get_rename(
                 res = Some(s.value());
                 Ok(())
               },
-              _ => Err(Error::new(
-                meta.path.span(),
-                "`rename` field must be a string literal",
-              )),
+              _ => Err(Error::new(meta.path.span(), "`rename` field must be a string literal")),
             }
           } else {
             Err(Error::new(meta.path.span(), "expecting `value` field"))
           }
         })?;
 
-        return res
-          .ok_or_else(|| Error::new(meta_list.span(), "no field in `rename`"));
+        return res.ok_or_else(|| Error::new(meta_list.span(), "no field in `rename`"));
       },
       _ => continue,
     }
@@ -73,9 +62,7 @@ pub fn get_rename(
   Ok(ident_name)
 }
 
-pub fn get_default(
-  attributes: &[Attribute], ty: &Type,
-) -> Result<Option<Expr>, Error> {
+pub fn get_default(attributes: &[Attribute], ty: &Type) -> Result<Option<Expr>, Error> {
   for attribute in attributes {
     if !attribute.path().is_ident("default") {
       continue;
@@ -84,17 +71,10 @@ pub fn get_default(
     match &attribute.meta {
       Meta::NameValue(name_value) => match &name_value.value {
         Expr::Lit(lit) => {
-          return Ok(Some(generate_conversion(
-            ty,
-            lit.lit.clone(),
-            lit.span(),
-          )));
+          return Ok(Some(generate_conversion(ty, lit.lit.clone(), lit.span())));
         },
         _ => {
-          return Err(Error::new(
-            name_value.value.span(),
-            "#[default = ...] only accept literal",
-          ));
+          return Err(Error::new(name_value.value.span(), "#[default = ...] only accept literal"));
         },
       },
       Meta::List(meta_list) => {
@@ -102,9 +82,7 @@ pub fn get_default(
         meta_list.parse_nested_meta(|meta| {
           if meta.path.is_ident("value") {
             let val: Expr = match meta.value()?.parse()? {
-              Expr::Lit(lit) => {
-                generate_conversion(ty, lit.lit.clone(), lit.span())
-              },
+              Expr::Lit(lit) => generate_conversion(ty, lit.lit.clone(), lit.span()),
               _ => {
                 return Err(Error::new(
                   meta.value()?.span(),
@@ -142,10 +120,7 @@ pub fn is_skip(attributes: &[Attribute]) -> Result<bool, Error> {
     match &attribute.meta {
       Meta::Path(_) => return Ok(true),
       _ => {
-        return Err(Error::new(
-          attribute.meta.span(),
-          "#[skip] receive nothing",
-        ));
+        return Err(Error::new(attribute.meta.span(), "#[skip] receive nothing"));
       },
     }
   }

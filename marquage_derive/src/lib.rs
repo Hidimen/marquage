@@ -2,17 +2,14 @@ mod utils;
 
 use proc_macro::TokenStream;
 use quote::quote_spanned;
-use syn::{
-  Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned,
-};
+use syn::{Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned};
 
 /// A derive macro that automatically implement `Parseable` for a struct.
 #[proc_macro_derive(Parse, attributes(rename, default, skip))]
 pub fn parseable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
-  let generic =
-    utils::add_trait_bounds(ast.generics.clone(), parse_quote!(Parseable));
+  let generic = utils::add_trait_bounds(ast.generics.clone(), parse_quote!(Parseable));
   let (impl_generics, ty_generics, where_clause) = generic.split_for_impl();
   let span = name.span();
 
@@ -20,21 +17,15 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
     Data::Struct(data_struct) => match &data_struct.fields {
       syn::Fields::Named(field) => &field.named,
       _ => {
-        return Error::new_spanned(
-          ast,
-          "Parseable trait is applicable only to named field",
-        )
-        .to_compile_error()
-        .into();
+        return Error::new_spanned(ast, "Parseable trait is applicable only to named field")
+          .to_compile_error()
+          .into();
       },
     },
     _ => {
-      return Error::new_spanned(
-        ast,
-        "Parseable trait is applicable only to structs",
-      )
-      .to_compile_error()
-      .into();
+      return Error::new_spanned(ast, "Parseable trait is applicable only to structs")
+        .to_compile_error()
+        .into();
     },
   };
   let parseable_fields = fields.iter().map(|f|  {
@@ -111,8 +102,7 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
 pub fn generable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
-  let generic =
-    utils::add_trait_bounds(ast.generics.clone(), parse_quote!(Generable));
+  let generic = utils::add_trait_bounds(ast.generics.clone(), parse_quote!(Generable));
   let (impl_generics, ty_generics, where_clause) = generic.split_for_impl();
   let span = name.span();
 
@@ -120,35 +110,29 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
     Data::Struct(data_struct) => match &data_struct.fields {
       syn::Fields::Named(field) => &field.named,
       _ => {
-        return Error::new_spanned(
-          ast,
-          "Generable trait is applicable only to named field",
-        )
-        .to_compile_error()
-        .into();
+        return Error::new_spanned(ast, "Generable trait is applicable only to named field")
+          .to_compile_error()
+          .into();
       },
     },
     _ => {
-      return Error::new_spanned(
-        ast,
-        "Generable trait is applicable only to structs",
-      )
-      .to_compile_error()
-      .into();
+      return Error::new_spanned(ast, "Generable trait is applicable only to structs")
+        .to_compile_error()
+        .into();
     },
   };
   let generable_fields = fields.iter().map(|f| {
     let name = f.ident.as_ref().unwrap();
     let rename = match utils::get_rename(&f.attrs, name.to_string()) {
       Ok(n) => n,
-      Err(e) => return e.to_compile_error()
+      Err(e) => return e.to_compile_error(),
     };
     let f_span = f.span();
 
-    match utils::is_skip(&f.attrs){
+    match utils::is_skip(&f.attrs) {
       Ok(true) => return proc_macro2::TokenStream::new(),
-      Ok(false) => {/* Do nothing */},
-      Err(e) => return e.to_compile_error()
+      Ok(false) => { /* Do nothing */ },
+      Err(e) => return e.to_compile_error(),
     }
 
     quote_spanned! { f_span =>
@@ -160,14 +144,14 @@ pub fn generable_derive(input: TokenStream) -> TokenStream {
     let name = f.ident.as_ref().unwrap();
     let rename = match utils::get_rename(&f.attrs, name.to_string()) {
       Ok(n) => n,
-      Err(e) => return e.to_compile_error()
+      Err(e) => return e.to_compile_error(),
     };
     let f_span = f.span();
 
-    match utils::is_skip(&f.attrs){
+    match utils::is_skip(&f.attrs) {
       Ok(true) => return proc_macro2::TokenStream::new(),
-      Ok(false) => {/* Do nothing */},
-      Err(e) => return e.to_compile_error()
+      Ok(false) => { /* Do nothing */ },
+      Err(e) => return e.to_compile_error(),
     }
 
     quote_spanned! { f_span =>

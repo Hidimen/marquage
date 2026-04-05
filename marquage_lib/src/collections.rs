@@ -1,5 +1,8 @@
 use std::{
-  borrow::Borrow, fmt::Debug, hash::Hash, ops::{Index, IndexMut}
+  borrow::Borrow,
+  fmt::Debug,
+  hash::Hash,
+  ops::{Index, IndexMut},
 };
 
 use crate::data::Value;
