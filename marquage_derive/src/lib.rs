@@ -28,7 +28,7 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
         .into();
     },
   };
-  let parseable_fields = fields.iter().map(|f| {
+  let parseable_fields: Vec<_> = fields.iter().map(|f| {
     let name = f.ident.as_ref().unwrap();
     let rename = match utils::get_rename(&f.attrs, name.to_string()) {
       Ok(n) => n,
@@ -75,20 +75,37 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
         }
       }
     }
-  });
+  }).collect();
 
-  let expanded = quote_spanned! { span =>
-    impl #impl_generics ::marquage::Parseable for #name #ty_generics #where_clause {
-      fn parse(v: ::marquage::data::Value) -> Result<Self, ::marquage::error::CastError>{
-        match v {
-          ::marquage::data::Value::Object(mut map) => {
-            Ok(
-              Self {
-                #(#parseable_fields),*
-              }
-            )
-          },
-          _ => Err(::marquage::error::CastError::IncompatibleType)
+  let expanded = if parseable_fields.is_empty() {
+    quote_spanned! { span =>
+      impl #impl_generics ::marquage::Parseable for #name #ty_generics #where_clause {
+        fn parse(v: ::marquage::data::Value) -> Result<Self, ::marquage::error::CastError>{
+          match v {
+            ::marquage::data::Value::Object(_) => {
+              Ok(
+                Self {}
+              )
+            },
+            _ => Err(::marquage::error::CastError::IncompatibleType)
+          }
+        }
+      }
+    }
+  } else {
+    quote_spanned! { span =>
+      impl #impl_generics ::marquage::Parseable for #name #ty_generics #where_clause {
+        fn parse(v: ::marquage::data::Value) -> Result<Self, ::marquage::error::CastError>{
+          match v {
+            ::marquage::data::Value::Object(mut map) => {
+              Ok(
+                Self {
+                  #(#parseable_fields),*
+                }
+              )
+            },
+            _ => Err(::marquage::error::CastError::IncompatibleType)
+          }
         }
       }
     }
