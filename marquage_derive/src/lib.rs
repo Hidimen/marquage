@@ -37,11 +37,6 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
     let f_span = f.span();
     let ty = &f.ty;
 
-    let raw = match utils::get_default(&f.attrs, ty) {
-      Ok(e) => e,
-      Err(e) => return e.to_compile_error(),
-    };
-
     match utils::is_skip(&f.attrs) {
       Ok(true) => {
         return quote_spanned! { f_span =>
@@ -54,6 +49,11 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
       Err(e) => return e.to_compile_error(),
     }
 
+    let raw = match utils::get_default(&f.attrs, ty) {
+      Ok(e) => e,
+      Err(e) => return e.to_compile_error(),
+    };
+
     if let Some(expr) = raw {
       return quote_spanned! {f_span =>
         #name: {
@@ -61,6 +61,18 @@ pub fn parseable_derive(input: TokenStream) -> TokenStream {
             ::marquage::Parseable::parse(data)?
           }else{
             #expr
+          }
+        }
+      };
+    }
+
+    if utils::is_option(ty) {
+      return quote_spanned! { f_span =>
+        #name: {
+          if let Some(data) = map.swap_remove(#rename) {
+            ::marquage::Parseable::parse(data)?
+          }else{
+            None
           }
         }
       };

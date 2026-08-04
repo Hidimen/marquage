@@ -13,6 +13,19 @@ pub fn add_trait_bounds(mut generics: Generics, bound: TypeParamBound) -> Generi
   generics
 }
 
+/// Check if a type is `Option<T>`.
+///
+/// Only the last path segment is matched, so fully-qualified paths like
+/// `std::option::Option<T>` are recognized as well.
+pub fn is_option(ty: &Type) -> bool {
+  match ty {
+    Type::Path(path) if path.qself.is_none() => {
+      path.path.segments.last().is_some_and(|seg| seg.ident == "Option")
+    },
+    _ => false,
+  }
+}
+
 pub fn get_rename(attributes: &[Attribute], ident_name: String) -> Result<String, Error> {
   for attribute in attributes {
     if !attribute.path().is_ident("rename") {

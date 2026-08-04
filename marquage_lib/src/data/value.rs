@@ -257,7 +257,10 @@ impl<T: Parseable> Parseable for Vec<T> {
 
 impl<T: Parseable> Parseable for Option<T> {
   fn parse(v: Value) -> Result<Self, crate::error::CastError> {
-    Ok(Some(T::parse(v)?))
+    match v {
+      Value::Void => Ok(None),
+      v => Ok(Some(T::parse(v)?)),
+    }
   }
 }
 
