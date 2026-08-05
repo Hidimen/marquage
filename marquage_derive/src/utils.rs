@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use proc_macro2::Span;
 use syn::{
   Attribute, Error, Expr, GenericParam, Generics, Lit, Meta, Type, TypeParamBound,
@@ -73,6 +74,96 @@ pub fn get_rename(attributes: &[Attribute], ident_name: String) -> Result<String
   }
 
   Ok(ident_name)
+}
+
+/// Parse the `rename_all` attribute into a case converter.
+///
+/// Supported rules: `lowercase`, `UPPERCASE`, `camelCase`, `snake_case`,
+/// `kebab-case`, `PascalCase`, `SCREAMING_SNAKE_CASE`.
+pub fn get_rename_all(attributes: &[Attribute]) -> Result<Option<Case<'static>>, Error> {
+  for attribute in attributes {
+    if !attribute.path().is_ident("rename_all") {
+      continue;
+    }
+
+    match &attribute.meta {
+      Meta::NameValue(name_value) => match &name_value.value {
+        Expr::Lit(literal) => match &literal.lit {
+          Lit::Str(s) => {
+            return Ok(Some(parse_rename_all(&s.value(), s.span())?));
+          },
+          _ => {
+            return Err(Error::new(literal.span(), "expect string literal, but found others"));
+          },
+        },
+        _ => {
+          return Err(Error::new(
+            name_value.value.span(),
+            "`rename_all` field only accept a string literal",
+          ));
+        },
+      },
+      Meta::List(meta_list) => {
+        let mut res: Option<Case<'static>> = None;
+        meta_list.parse_nested_meta(|meta| {
+          if meta.path.is_ident("value") {
+            let val: Lit = meta.value()?.parse()?;
+            match &val {
+              Lit::Str(s) => {
+                res = Some(parse_rename_all(&s.value(), s.span())?);
+                Ok(())
+              },
+              _ => Err(Error::new(meta.path.span(), "`rename_all` field must be a string literal")),
+            }
+          } else {
+            Err(Error::new(meta.path.span(), "expecting `value` field"))
+          }
+        })?;
+
+        return Ok(Some(
+          res.ok_or_else(|| Error::new(meta_list.span(), "no field in `rename_all`"))?,
+        ));
+      },
+      _ => {
+        return Err(Error::new(
+          attribute.meta.span(),
+          "`rename_all` field only accept a string literal",
+        ));
+      },
+    }
+  }
+
+  Ok(None)
+}
+
+fn parse_rename_all(rule: &str, span: Span) -> Result<Case<'static>, Error> {
+  let case = match rule {
+    "lowercase" => Case::Flat,
+    "UPPERCASE" => Case::UpperFlat,
+    "camelCase" => Case::Camel,
+    "snake_case" => Case::Snake,
+    "kebab-case" => Case::Kebab,
+    "PascalCase" => Case::Pascal,
+    "SCREAMING_SNAKE_CASE" => Case::UpperSnake,
+    _ => return Err(Error::new(span, format!("unknown rename rule: `{rule}`"))),
+  };
+
+  Ok(case)
+}
+
+/// Get the serialized name of a field or variant.
+///
+/// An explicit `#[rename = "..."]` takes precedence. Otherwise, if a
+/// `rename_all` case is provided, the identifier is converted into that case;
+/// otherwise the identifier is used as-is.
+pub fn get_rename_with(
+  attributes: &[Attribute], ident_name: &str, rename_all: Option<Case<'static>>,
+) -> Result<String, Error> {
+  let fallback = match rename_all {
+    Some(case) => ident_name.to_case(case),
+    None => ident_name.to_string(),
+  };
+  get_rename(attributes, fallback)
 }
 
 pub fn get_default(attributes: &[Attribute], ty: &Type) -> Result<Option<Expr>, Error> {
