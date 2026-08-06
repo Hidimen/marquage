@@ -5,7 +5,7 @@ use quote::quote_spanned;
 use syn::{Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned};
 
 /// A derive macro that automatically implement `Parseable` for a struct or enum.
-#[proc_macro_derive(Parse, attributes(rename, default, skip, rename_all))]
+#[proc_macro_derive(Parse, attributes(marquage))]
 pub fn parseable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
@@ -281,7 +281,7 @@ fn generate_field_parse(f: &syn::Field, rename: &str) -> Result<proc_macro2::Tok
 }
 
 /// A derive macro that automatically implement `Generable` for a struct.
-#[proc_macro_derive(Generate, attributes(rename, default, skip, rename_all))]
+#[proc_macro_derive(Generate, attributes(marquage))]
 pub fn generable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();

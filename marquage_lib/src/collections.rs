@@ -5,7 +5,7 @@ use std::{
   ops::{Index, IndexMut},
 };
 
-use crate::data::Value;
+use crate::{Generable, Parseable, data::Value, error::CastError};
 
 /// Representing map's data.
 #[derive(PartialEq, Clone)]
@@ -134,6 +134,25 @@ impl Map {
     K: ?Sized + Hash + Ord + Eq,
   {
     self.inner.swap_remove(key)
+  }
+}
+
+impl Parseable for Map {
+  fn parse(v: Value) -> Result<Self, CastError> {
+    match v {
+      Value::Object(map) => Ok(map),
+      _ => Err(CastError::IncompatibleType),
+    }
+  }
+}
+
+impl Generable for Map {
+  fn generate(self) -> Value {
+    Value::Object(self)
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::Object(self.clone())
   }
 }
 

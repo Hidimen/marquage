@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use paste::paste;
 
-use crate::{Generable, Map, Parseable};
+use crate::{Generable, Map, Parseable, error::CastError};
 
 use super::index::Index;
 
@@ -43,6 +43,22 @@ pub enum Value {
   Object(Map),
   /// Representing an array.
   Array(Vec<Value>),
+}
+
+impl Parseable for Value {
+  fn parse(v: Value) -> Result<Self, CastError> {
+    Ok(v)
+  }
+}
+
+impl Generable for Value {
+  fn generate(self) -> Value {
+    self
+  }
+
+  fn generate_ref(&self) -> Value {
+    self.clone()
+  }
 }
 
 impl<T> std::ops::Index<T> for Value
