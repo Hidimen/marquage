@@ -5,7 +5,7 @@ use quote::quote_spanned;
 use syn::{Data, DeriveInput, Error, parse_macro_input, parse_quote, spanned::Spanned};
 
 /// A derive macro that automatically implement `Parseable` for a struct or enum.
-#[proc_macro_derive(Parse, attributes(rename, default, skip, rename_all))]
+#[proc_macro_derive(Parse, attributes(marquage))]
 pub fn parseable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();
@@ -251,10 +251,26 @@ fn generate_field_parse(f: &syn::Field, rename: &str) -> Result<proc_macro2::Tok
     Err(e) => return Err(e),
   }
 
+  // A key occurring several times is collected into an array by the parser,
+  // while a key occurring once stays a scalar. `Vec` fields accept both, so a
+  // scalar is promoted to a one-element array here. `void` is kept as it is,
+  // so that an `Option<Vec<T>>` field still reads it as `None`.
+  let parse = if utils::is_vec_field(ty) {
+    quote_spanned! { f_span =>
+      ::marquage::Parseable::parse(
+        if data.is_void() { data } else { ::marquage::data::Value::into_array(data) }
+      )
+    }
+  } else {
+    quote_spanned! { f_span =>
+      ::marquage::Parseable::parse(data)
+    }
+  };
+
   if let Some(expr) = utils::get_default(&f.attrs, ty)? {
     return Ok(quote_spanned! { f_span =>
       if let Some(data) = map.swap_remove(#rename) {
-        ::marquage::Parseable::parse(data)?
+        #parse?
       }else{
         #expr
       }
@@ -264,7 +280,7 @@ fn generate_field_parse(f: &syn::Field, rename: &str) -> Result<proc_macro2::Tok
   if utils::is_option(ty) {
     return Ok(quote_spanned! { f_span =>
       if let Some(data) = map.swap_remove(#rename) {
-        ::marquage::Parseable::parse(data)?
+        #parse?
       }else{
         None
       }
@@ -273,7 +289,7 @@ fn generate_field_parse(f: &syn::Field, rename: &str) -> Result<proc_macro2::Tok
 
   Ok(quote_spanned! { f_span =>
     if let Some(data) = map.swap_remove(#rename) {
-      ::marquage::Parseable::parse(data)?
+      #parse?
     }else{
       return Err(::marquage::error::CastError::FieldNotFound(stringify!(#rename).to_string()));
     }
@@ -281,7 +297,7 @@ fn generate_field_parse(f: &syn::Field, rename: &str) -> Result<proc_macro2::Tok
 }
 
 /// A derive macro that automatically implement `Generable` for a struct.
-#[proc_macro_derive(Generate, attributes(rename, default, skip, rename_all))]
+#[proc_macro_derive(Generate, attributes(marquage))]
 pub fn generable_derive(input: TokenStream) -> TokenStream {
   let ast = parse_macro_input!(input as DeriveInput);
   let name = ast.ident.clone();

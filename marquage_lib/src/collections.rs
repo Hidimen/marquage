@@ -1,13 +1,14 @@
 use std::{
   borrow::Borrow,
+  fmt::Debug,
   hash::Hash,
   ops::{Index, IndexMut},
 };
 
-use crate::data::Value;
+use crate::{Generable, Parseable, data::Value, error::CastError};
 
 /// Representing map's data.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct Map {
   inner: indexmap::IndexMap<String, Value>,
 }
@@ -136,6 +137,25 @@ impl Map {
   }
 }
 
+impl Parseable for Map {
+  fn parse(v: Value) -> Result<Self, CastError> {
+    match v {
+      Value::Object(map) => Ok(map),
+      _ => Err(CastError::IncompatibleType),
+    }
+  }
+}
+
+impl Generable for Map {
+  fn generate(self) -> Value {
+    Value::Object(self)
+  }
+
+  fn generate_ref(&self) -> Value {
+    Value::Object(self.clone())
+  }
+}
+
 impl Default for Map {
   fn default() -> Self {
     Self { inner: indexmap::IndexMap::new() }
@@ -236,5 +256,11 @@ impl<'a> IntoIterator for &'a mut Map {
 impl<const N: usize> From<[(String, Value); N]> for Map {
   fn from(value: [(String, Value); N]) -> Self {
     Self { inner: indexmap::IndexMap::from(value) }
+  }
+}
+
+impl Debug for Map {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    self.inner.fmt(f)
   }
 }

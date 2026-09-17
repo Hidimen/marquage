@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use paste::paste;
 
-use crate::{Generable, Map, Parseable};
+use crate::{Generable, Map, Parseable, error::CastError};
 
 use super::index::Index;
 
@@ -43,6 +43,22 @@ pub enum Value {
   Object(Map),
   /// Representing an array.
   Array(Vec<Value>),
+}
+
+impl Parseable for Value {
+  fn parse(v: Value) -> Result<Self, CastError> {
+    Ok(v)
+  }
+}
+
+impl Generable for Value {
+  fn generate(self) -> Value {
+    self
+  }
+
+  fn generate_ref(&self) -> Value {
+    self.clone()
+  }
 }
 
 impl<T> std::ops::Index<T> for Value
@@ -151,6 +167,19 @@ impl Value {
     match self {
       Self::QuotedString(s) | Self::RawString(s) => Some(s),
       _ => None,
+    }
+  }
+
+  /// Turn the value into an [array](Value::Array).
+  ///
+  /// An array is returned unchanged, while any other value is wrapped into a
+  /// single-element array. It bridges a key occurring once (a scalar) and a key
+  /// occurring several times (an array built by the parser), so that both of
+  /// them can be parsed into a `Vec<T>`.
+  pub fn into_array(self) -> Value {
+    match self {
+      Self::Array(arr) => Self::Array(arr),
+      other => Self::Array(vec![other]),
     }
   }
 }

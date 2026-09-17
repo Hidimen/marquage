@@ -59,12 +59,15 @@ impl<'lex> Lexer<'lex> {
         "," => {
           Ok(Self::create_token(Literal::Comma, legacy_pos, current_pos, (offset, offset + 1)))
         },
-        "@" => Ok(Self::create_token(Literal::At, legacy_pos, current_pos, (offset, offset + 1))),
+        // "@" => self.handle_function(offset, legacy_pos),
         "=" => {
           Ok(Self::create_token(Literal::Equal, legacy_pos, current_pos, (offset, offset + 1)))
         },
         "-" => self.handle_number(offset, legacy_pos, true),
-        "#" => Ok(self.handle_comment(offset, legacy_pos)),
+        "#" => {
+          self.handle_comment();
+          self.lex()
+        },
         "\"" => self.handle_quoted_string(offset, legacy_pos),
         other if self.is_digital(other) => self.handle_number(offset, legacy_pos, false),
         "v" => self.handle_void(offset, legacy_pos),
@@ -92,17 +95,7 @@ impl<'lex> Lexer<'lex> {
       }
     }
 
-    if let Some(p) = self.peek()
-      && (p == " "
-        || p == "\r"
-        || p == "\n"
-        || p == "#"
-        || p == ";"
-        || p == ","
-        || p == "]"
-        || p == "}"
-        || p == ")")
-    {
+    if self.is_keyword_boundary() {
       Ok(Self::create_token(Literal::Void, start, self.pos, (start_offset, self.current_offset())))
     } else {
       self.map.move_to(start_offset);
@@ -126,17 +119,7 @@ impl<'lex> Lexer<'lex> {
       }
     }
 
-    if let Some(p) = self.peek()
-      && (p == " "
-        || p == "\r"
-        || p == "\n"
-        || p == "#"
-        || p == ";"
-        || p == ","
-        || p == "]"
-        || p == "}"
-        || p == ")")
-    {
+    if self.is_keyword_boundary() {
       Ok(Self::create_token(
         Literal::Boolean(true),
         start,
@@ -165,17 +148,7 @@ impl<'lex> Lexer<'lex> {
       }
     }
 
-    if let Some(p) = self.peek()
-      && (p == " "
-        || p == "\r"
-        || p == "\n"
-        || p == "#"
-        || p == ";"
-        || p == ","
-        || p == "]"
-        || p == "}"
-        || p == ")")
-    {
+    if self.is_keyword_boundary() {
       Ok(Self::create_token(
         Literal::Boolean(false),
         start,
@@ -263,7 +236,11 @@ impl<'lex> Lexer<'lex> {
     Err(LexerError::UnexpectedInterruption)
   }
 
-  fn handle_comment(&mut self, start_offset: usize, start: Position) -> Token {
+  /// Skip a comment starting at `#` up to (but not including) the newline.
+  ///
+  /// Comments are transparent to the parser: [Lexer::lex] re-lexes the next
+  /// token instead of emitting a `Comment` literal.
+  fn handle_comment(&mut self) {
     while let Some((s, _)) = self.advance() {
       match s {
         "\n" => {
@@ -276,13 +253,6 @@ impl<'lex> Lexer<'lex> {
         },
       }
     }
-
-    Self::create_token(
-      Literal::Comment("".into()),
-      start,
-      self.pos,
-      (start_offset, self.current_offset()),
-    )
   }
 
   fn handle_number(
@@ -290,7 +260,7 @@ impl<'lex> Lexer<'lex> {
   ) -> Result<Token, LexerError> {
     while let Some((s, _)) = self.advance() {
       match s {
-        " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" => {
+        " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" | "=" => {
           self.back();
           break;
         },
@@ -347,7 +317,7 @@ impl<'lex> Lexer<'lex> {
   ) -> Result<Token, LexerError> {
     while let Some((s, _)) = self.advance() {
       match s {
-        " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" => {
+        " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" | "=" => {
           self.back();
           break;
         },
@@ -382,7 +352,7 @@ impl<'lex> Lexer<'lex> {
   ) -> Result<Token, LexerError> {
     while let Some((s, _)) = self.advance() {
       match s {
-        " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" => {
+        " " | "\r" | "\n" | "#" | ";" | "," | "]" | "}" | ")" | "=" => {
           self.back();
           break;
         },
@@ -406,6 +376,150 @@ impl<'lex> Lexer<'lex> {
       (start_offset, self.current_offset()),
     ))
   }
+
+  // /// Lex a function call, whose leading `@` has already been consumed.
+  // ///
+  // /// The syntax is `@name(arg, arg, ...)`. The `@`, the name and the open paren
+  // /// must be on the same line: a newline before the open paren is rejected, while
+  // /// spaces are allowed (both around the name and before the open paren). Arguments
+  // /// are separated by commas, and both an empty argument list and a trailing comma
+  // /// are accepted.
+  // fn handle_function(&mut self, start_offset: usize, start: Position) -> Result<Token, LexerError> {
+  //   // The name is not built char by char: its offsets are remembered instead, so
+  //   // that it can be sliced out of the source map once its boundary is known.
+  //   let name_start = self.current_offset();
+  //   let name_end;
+
+  //   'name: {
+  //     // Read the name up to the blank or the open paren terminating it.
+  //     loop {
+  //       match self.advance() {
+  //         Some(("(", _)) => {
+  //           name_end = self.current_offset() - 1;
+  //           self.pos.add_column();
+  //           break 'name;
+  //         },
+  //         Some((" " | "\t", _)) => {
+  //           if self.current_offset() - 1 == name_start {
+  //             // Nothing between `@` and the blank: the name is empty.
+  //             return Err(LexerError::InvalidFunctionName);
+  //           }
+  //           name_end = self.current_offset() - 1;
+  //           break;
+  //         },
+  //         Some(("\r" | "\n", _)) => {
+  //           return Err(LexerError::UnexpectedNewline {
+  //             span: Span::new(start, self.pos, (self.current_offset() - 1, self.current_offset())),
+  //           });
+  //         },
+  //         Some((
+  //           ch @ ("[" | "]" | "{" | "}" | ")" | "\"" | "\'" | "#" | ";" | "," | "=" | "@"),
+  //           _,
+  //         )) => {
+  //           return Err(LexerError::UnexpectedLiteral {
+  //             literal: ch.into(),
+  //             span: Span::new(start, self.pos, (self.current_offset() - 1, self.current_offset())),
+  //           });
+  //         },
+  //         Some((_, _)) => {
+  //           self.pos.add_column();
+  //           continue;
+  //         },
+  //         None => return Err(LexerError::UnexpectedInterruption),
+  //       }
+  //     }
+
+  //     // Skip the blanks between the name and the open paren, which must be on the same line.
+  //     loop {
+  //       match self.advance() {
+  //         Some((" " | "\t", _)) => self.pos.add_column(),
+  //         Some(("(", _)) => {
+  //           self.pos.add_column();
+  //           break 'name;
+  //         },
+  //         Some(("\r" | "\n", _)) => {
+  //           return Err(LexerError::UnexpectedNewline {
+  //             span: Span::new(start, self.pos, (self.current_offset() - 1, self.current_offset())),
+  //           });
+  //         },
+  //         Some((other, _)) => {
+  //           return Err(LexerError::UnexpectedLiteral {
+  //             literal: other.into(),
+  //             span: Span::new(start, self.pos, (self.current_offset() - 1, self.current_offset())),
+  //           });
+  //         },
+  //         None => return Err(LexerError::UnexpectedInterruption),
+  //       }
+  //     }
+  //   }
+
+  //   // A name is an identifier: it must start with a letter or `_`, and continue with
+  //   // letters, digits or `_`.
+  //   let name = self.map.get_by_offset(name_start, name_end);
+  //   let valid_name = name.chars().next().is_some_and(|ch| ch.is_alphabetic() || ch == '_')
+  //     && name.chars().all(|ch| ch.is_alphanumeric() || ch == '_');
+  //   if !valid_name {
+  //     return Err(LexerError::InvalidFunctionName);
+  //   }
+
+  //   let mut args: Vec<Literal> = vec![];
+  //   // Whether a comma is required before the next argument.
+  //   let mut expect_comma = false;
+
+  //   loop {
+  //     let Some((s, offset)) = self.skipping_advance() else {
+  //       return Err(LexerError::UnexpectedInterruption);
+  //     };
+  //     let legacy_pos = self.pos.add_column_by(1);
+
+  //     match s {
+  //       ")" => break,
+  //       // Comments are transparent, and never make a comma required.
+  //       "#" => {
+  //         self.handle_comment();
+  //         continue;
+  //       },
+  //       "," => {
+  //         if !expect_comma {
+  //           return Err(LexerError::UnexpectedLiteral {
+  //             literal: s.into(),
+  //             span: Span::new(start, self.pos, (offset, self.current_offset())),
+  //           });
+  //         }
+  //         expect_comma = false;
+  //         continue;
+  //       },
+  //       // Two arguments in a row, but no comma between them.
+  //       _ if expect_comma => {
+  //         return Err(LexerError::UnexpectedLiteral {
+  //           literal: s.into(),
+  //           span: Span::new(start, self.pos, (offset, self.current_offset())),
+  //         });
+  //       },
+  //       _ => {
+  //         let token = match s {
+  //           "@" => self.handle_function(offset, legacy_pos),
+  //           "-" => self.handle_number(offset, legacy_pos, true),
+  //           "\"" => self.handle_quoted_string(offset, legacy_pos),
+  //           other if self.is_digital(other) => self.handle_number(offset, legacy_pos, false),
+  //           "v" => self.handle_void(offset, legacy_pos),
+  //           "t" => self.handle_true(offset, legacy_pos),
+  //           "f" => self.handle_false(offset, legacy_pos),
+  //           _ => self.handle_raw_string(offset, legacy_pos),
+  //         }?;
+  //         args.push(token.get_literal());
+  //         expect_comma = true;
+  //       },
+  //     }
+  //   }
+
+  //   Ok(Self::create_token(
+  //     Literal::Function(name.to_string(), args),
+  //     start,
+  //     self.pos,
+  //     (start_offset, self.current_offset()),
+  //   ))
+  // }
 
   fn create_token(
     literal: Literal, start: Position, end: Position, offsets: (usize, usize),
@@ -499,5 +613,29 @@ impl<'lex> Lexer<'lex> {
       || s == "7"
       || s == "8"
       || s == "9"
+  }
+
+  /// Check whether a keyword (`true`/`false`/`void`) is followed by a boundary.
+  ///
+  /// A keyword is only recognized when the next character terminates it: one of
+  /// the structural tokens ` ` `\r` `\n` `#` `;` `,` `]` `}` `)` `=`, or the end
+  /// of input. Anything else (e.g. a letter in `truefoo`) means the token is not
+  /// a keyword and falls back to a raw string.
+  fn is_keyword_boundary(&self) -> bool {
+    match self.peek() {
+      None => true,
+      Some(p) => {
+        p == " "
+          || p == "\r"
+          || p == "\n"
+          || p == "#"
+          || p == ";"
+          || p == ","
+          || p == "]"
+          || p == "}"
+          || p == ")"
+          || p == "="
+      },
+    }
   }
 }
