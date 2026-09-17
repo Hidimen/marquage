@@ -27,6 +27,50 @@ pub fn is_option(ty: &Type) -> bool {
   }
 }
 
+/// Check if a type is `Vec<T>`.
+///
+/// Only the last path segment is matched, so fully-qualified paths like
+/// `std::vec::Vec<T>` are recognized as well.
+pub fn is_vec(ty: &Type) -> bool {
+  match ty {
+    Type::Path(path) if path.qself.is_none() => {
+      path.path.segments.last().is_some_and(|seg| seg.ident == "Vec")
+    },
+    _ => false,
+  }
+}
+
+/// The payload of `Option<T>`, or `ty` itself if it is not an `Option`.
+fn option_payload(ty: &Type) -> &Type {
+  let Type::Path(path) = ty else { return ty };
+  if path.qself.is_some() {
+    return ty;
+  }
+  let Some(segment) = path.path.segments.last() else {
+    return ty;
+  };
+  if segment.ident != "Option" {
+    return ty;
+  }
+  let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+    return ty;
+  };
+  match arguments.args.first() {
+    Some(syn::GenericArgument::Type(payload)) => payload,
+    _ => ty,
+  }
+}
+
+/// Check if a field of type `ty` accepts a scalar as a one-element array,
+/// i.e. `ty` is a `Vec<T>` or an `Option<Vec<T>>`.
+///
+/// Such a field is filled either by a key occurring several times, which the
+/// parser collects into an array, or by a key occurring once, which stays a
+/// scalar and is promoted to an array while parsing.
+pub fn is_vec_field(ty: &Type) -> bool {
+  is_vec(option_payload(ty))
+}
+
 /// Invoke `logic` for every nested meta inside every `#[marquage(...)]` attribute.
 ///
 /// A `#[marquage(...)]` attribute must be a list. Keys not handled by `logic`
@@ -144,10 +188,7 @@ pub fn get_default(attributes: &[Attribute], ty: &Type) -> Result<Option<Expr>, 
             negate_literal(lit.lit.clone(), unary.span())
           },
           _ => {
-            return Err(Error::new(
-              nv.value.span(),
-              "`default` must be a numeric literal",
-            ));
+            return Err(Error::new(nv.value.span(), "`default` must be a numeric literal"));
           },
         },
         _ => return Err(Error::new(nv.value.span(), "`default` must be a literal")),
@@ -238,10 +279,7 @@ fn primitive_numeric_suffix(ty: &Type) -> Option<&'static str> {
     "i8", "i16", "i32", "i64", "i128", "isize", "u8", "u16", "u32", "u64", "u128", "usize", "f32",
     "f64",
   ];
-  SUFFIXES
-    .iter()
-    .copied()
-    .find(|&suffix| is_primitive_ident(ty, suffix))
+  SUFFIXES.iter().copied().find(|&suffix| is_primitive_ident(ty, suffix))
 }
 
 /// Rebuild a numeric literal with a leading minus sign, e.g. `1` -> `-1`.

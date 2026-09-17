@@ -7,17 +7,29 @@ use crate::parse::{literal::Literal, span::Span};
 #[derive(Debug)]
 pub enum LexerError {
   /// An unexpected literal detected.
-  UnexpectedLiteral { literal: String, span: Span },
+  UnexpectedLiteral {
+    literal: String,
+    span: Span,
+  },
   /// Invalid float number format.
-  NonNumberAfterDot { span: Span },
+  NonNumberAfterDot {
+    span: Span,
+  },
   /// Unexpected end.
   UnexpectedInterruption,
   /// Unexpected newline in a string.
-  UnexpectedNewline { span: Span },
+  UnexpectedNewline {
+    span: Span,
+  },
   /// Broken escape string format.
-  IncompleteEscape { span: Span },
+  IncompleteEscape {
+    span: Span,
+  },
   /// Unknown escape.
-  UndefinedEscape { span: Span },
+  UndefinedEscape {
+    span: Span,
+  },
+  InvalidFunctionName,
 }
 
 impl Display for LexerError {
@@ -65,6 +77,9 @@ impl Display for LexerError {
           line = span.start.0,
           column = span.start.1
         )
+      },
+      Self::InvalidFunctionName => {
+        write!(f, "Invalid function name")
       },
     }
   }

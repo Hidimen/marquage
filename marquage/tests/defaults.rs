@@ -20,16 +20,10 @@ fn unsuffixed_int_defaults_are_typed_by_the_field() {
 count = 5;
 "###;
   let parsed: UnsuffixedInts = from_str(data).unwrap();
-  assert_eq!(
-    parsed,
-    UnsuffixedInts { count: 5, tiny: 42, seven: 7, big: 1000000000000 }
-  );
+  assert_eq!(parsed, UnsuffixedInts { count: 5, tiny: 42, seven: 7, big: 1000000000000 });
 
   let parsed: UnsuffixedInts = from_str("unused = 0;").unwrap();
-  assert_eq!(
-    parsed,
-    UnsuffixedInts { count: 1024, tiny: 42, seven: 7, big: 1000000000000 }
-  );
+  assert_eq!(parsed, UnsuffixedInts { count: 1024, tiny: 42, seven: 7, big: 1000000000000 });
 }
 
 /// Literals already suffixed with the field type must not be wrapped in a

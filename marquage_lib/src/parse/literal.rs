@@ -26,10 +26,11 @@ pub enum Literal {
   Semicolon, // ;
   Comma,     // ,
 
-  At,    // @
   Equal, // =
 
   Comment(String),
+
+  Function(String, Vec<Literal>),
 
   End,
 }
@@ -107,8 +108,8 @@ impl Literal {
     matches!(self, Self::Comma)
   }
 
-  pub fn is_at(&self) -> bool {
-    matches!(self, Self::At)
+  pub fn is_function(&self) -> bool {
+    matches!(self, Self::Function(..))
   }
 
   pub fn is_comment(&self) -> bool {
@@ -119,7 +120,6 @@ impl Literal {
 impl Display for Literal {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      Self::At => write!(f, "@"),
       Self::Boolean(b) => write!(f, "{b}"),
       Self::CloseBrace => write!(f, "}}"),
       Self::CloseBracket => write!(f, "]"),
@@ -138,6 +138,7 @@ impl Display for Literal {
       Self::SignedIntegerNumber(n) => write!(f, "{n}"),
       Self::UnsignedIntegerNumber(n) => write!(f, "{n}"),
       Self::Void => write!(f, "void"),
+      Self::Function(..) => write!(f, "<FUNCTION CALL>"),
     }
   }
 }

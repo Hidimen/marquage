@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{
   Map,
   data::Value,
@@ -25,6 +27,9 @@ impl<'parser> Parser<'parser> {
 
   fn parse_object(&mut self, check_brace: bool) -> Result<Value, ParserError> {
     let mut map = Map::new();
+    // Keys defined more than once. Their values are collected into an array, so
+    // an array written by the user is never confused with the array built here.
+    let mut duplicated = HashSet::new();
     loop {
       let token = self.lexer.lex()?;
       let (literal, span) = token.split();
@@ -36,7 +41,7 @@ impl<'parser> Parser<'parser> {
           if check {
             self.check_semicolon(&span)?;
           }
-          map.insert(key, val);
+          insert_entry(&mut map, &mut duplicated, key, val);
           continue;
         },
         Literal::End => {
@@ -152,5 +157,38 @@ impl<'parser> Parser<'parser> {
       Literal::OpenBracket => Ok((self.parse_array()?, true)),
       other => Err(ParserError::ExpectValue(other, span)),
     }
+  }
+}
+
+/// Insert an entry into `map`.
+///
+/// `Marquage` allows a key to be defined more than once. Every occurrence is
+/// collected into a [`Value::Array`], so `a = 1; a = 2;` gives `Array([1, 2])`
+/// and can be parsed into a `Vec<T>`. A key defined only once keeps its own
+/// value.
+///
+/// An array written by the user is never flattened, so the array's length always
+/// equals the count of the key's definitions: `a = [1, 2]; a = [3];` gives
+/// `Array([Array([1, 2]), Array([3])])`. `duplicated` records the keys whose
+/// value has already been turned into an array, telling them apart from the
+/// arrays written by the user.
+fn insert_entry(map: &mut Map, duplicated: &mut HashSet<String>, key: String, value: Value) {
+  // The first occurrence.
+  if map.get(&key).is_none() {
+    map.insert(key, value);
+    return;
+  }
+
+  let slot = map.get_mut(&key).expect("the key is defined before");
+  if duplicated.contains(&key) {
+    // The third and later occurrences. The value is an array here.
+    if let Value::Array(arr) = slot {
+      arr.push(value);
+    }
+  } else {
+    // The second occurrence turns the value into an array.
+    let first = std::mem::replace(slot, Value::Void);
+    *slot = Value::Array(vec![first, value]);
+    duplicated.insert(key);
   }
 }

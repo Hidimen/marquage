@@ -89,6 +89,21 @@ array = ["hello", "world", {
 }];
 ```
 
+#### Repeated keys
+A key is allowed to be defined more than once. All of its values are collected into an array:
+```marquage
+tag = "rust";
+tag = "marquage";
+```
+is equivalent to `tag = ["rust", "marquage"];`.
+
+Note that an existing array is not flattened, so the array's length always equals the count of the key's definitions:
+```marquage
+pair = [1, 2];
+pair = [3, 4];
+```
+gives `[[1, 2], [3, 4]]` instead of `[1, 2, 3, 4]`.
+
 ## Library usage
 ```rust
 use marquage::{ from_str, Generate, Parse };

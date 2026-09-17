@@ -169,6 +169,19 @@ impl Value {
       _ => None,
     }
   }
+
+  /// Turn the value into an [array](Value::Array).
+  ///
+  /// An array is returned unchanged, while any other value is wrapped into a
+  /// single-element array. It bridges a key occurring once (a scalar) and a key
+  /// occurring several times (an array built by the parser), so that both of
+  /// them can be parsed into a `Vec<T>`.
+  pub fn into_array(self) -> Value {
+    match self {
+      Self::Array(arr) => Self::Array(arr),
+      other => Self::Array(vec![other]),
+    }
+  }
 }
 
 macro_rules! impl_p_for_unsigned {
