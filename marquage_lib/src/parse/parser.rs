@@ -37,7 +37,7 @@ impl<'parser> Parser<'parser> {
         Literal::QuotedString(s) | Literal::RawString(s) => {
           let key = s;
           self.check_equal(&span)?;
-          let (val, check) = self.expect_value(&span)?;
+          let (val, check, span) = self.expect_value(&span)?;
           if check {
             self.check_semicolon(&span)?;
           }
@@ -62,7 +62,7 @@ impl<'parser> Parser<'parser> {
     }
   }
 
-  fn parse_array(&mut self) -> Result<Value, ParserError> {
+  fn parse_array(&mut self) -> Result<(Value, Span), ParserError> {
     let mut arr = Vec::<Value>::new();
     enum State {
       ExpectComma,
@@ -75,7 +75,7 @@ impl<'parser> Parser<'parser> {
       match state {
         State::ExpectElement => match literal {
           Literal::CloseBracket => {
-            return Ok(Value::Array(arr));
+            return Ok((Value::Array(arr), span));
           },
           other => {
             let val = self.check_element(other, span)?;
@@ -86,7 +86,7 @@ impl<'parser> Parser<'parser> {
         },
         State::ExpectComma => match literal {
           Literal::CloseBracket => {
-            return Ok(Value::Array(arr));
+            return Ok((Value::Array(arr), span));
           },
           Literal::Comma => state = State::ExpectElement,
           _ => {
@@ -133,28 +133,31 @@ impl<'parser> Parser<'parser> {
       Literal::UnsignedIntegerNumber(n) => Ok(Value::UnsignedIntegerNumber(n)),
       Literal::Void => Ok(Value::Void),
       Literal::OpenBrace => Ok(self.parse_object(true)?),
-      Literal::OpenBracket => Ok(self.parse_array()?),
+      Literal::OpenBracket => Ok(self.parse_array()?.0),
       other => Err(ParserError::ExpectValue(other, span)),
     }
   }
 
-  fn expect_value(&mut self, other: &Span) -> Result<(Value, bool), ParserError> {
+  fn expect_value(&mut self, other: &Span) -> Result<(Value, bool, Span), ParserError> {
     let token = self.lexer.lex()?;
     let (literal, span) = token.split();
     match literal {
-      Literal::Boolean(b) if span.is_same_line(other) => Ok((Value::Boolean(b), true)),
-      Literal::FloatNumber(f) if span.is_same_line(other) => Ok((Value::FloatNumber(f), true)),
-      Literal::QuotedString(s) if span.is_same_line(other) => Ok((Value::QuotedString(s), true)),
-      Literal::RawString(s) if span.is_same_line(other) => Ok((Value::RawString(s), true)),
+      Literal::Boolean(b) if span.is_same_line(other) => Ok((Value::Boolean(b), true, span)),
+      Literal::FloatNumber(f) if span.is_same_line(other) => Ok((Value::FloatNumber(f), true, span)),
+      Literal::QuotedString(s) if span.is_same_line(other) => Ok((Value::QuotedString(s), true, span)),
+      Literal::RawString(s) if span.is_same_line(other) => Ok((Value::RawString(s), true, span)),
       Literal::SignedIntegerNumber(n) if span.is_same_line(other) => {
-        Ok((Value::SignedIntegerNumber(n), true))
+        Ok((Value::SignedIntegerNumber(n), true, span))
       },
       Literal::UnsignedIntegerNumber(n) if span.is_same_line(other) => {
-        Ok((Value::UnsignedIntegerNumber(n), true))
+        Ok((Value::UnsignedIntegerNumber(n), true, span))
       },
-      Literal::Void if span.is_same_line(other) => Ok((Value::Void, true)),
-      Literal::OpenBrace => Ok((self.parse_object(true)?, false)),
-      Literal::OpenBracket => Ok((self.parse_array()?, true)),
+      Literal::Void if span.is_same_line(other) => Ok((Value::Void, true, span)),
+      Literal::OpenBrace => Ok((self.parse_object(true)?, false, span)),
+      Literal::OpenBracket => {
+        let res = self.parse_array()?;
+        Ok((res.0, true, res.1))
+      },
       other => Err(ParserError::ExpectValue(other, span)),
     }
   }
