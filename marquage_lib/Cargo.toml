@@ -1,6 +1,8 @@
 [package]
 name = "marquage_lib"
-version = "0.0.1"
+description = "Core of marquage"
+homepage.workspace = true
+version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
@@ -12,4 +14,4 @@ doc = false
 indexmap = { workspace = true }
 paste = "1.0.15"
 
-marquage_derive = { path = "../marquage_derive" }
+marquage_derive = { path = "../marquage_derive", version = "0.1.0" }

@@ -1,5 +1,7 @@
 [package]
 name = "marquage"
+description = "Facade library of marquage"
+homepage.workspace = true
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -9,8 +11,8 @@ license.workspace = true
 proc-macro = false
 
 [dependencies]
-marquage_lib = { path = "../marquage_lib" }
-marquage_derive = { path = "../marquage_derive" }
+marquage_lib = { path = "../marquage_lib", version = "0.1.0" }
+marquage_derive = { path = "../marquage_derive", version = "0.1.0" }
 indexmap = { workspace = true }
 
 [features]

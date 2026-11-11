@@ -1,5 +1,7 @@
 [package]
 name = "marquage_derive"
+description = "Proc macro for marquage"
+homepage.workspace = true
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
