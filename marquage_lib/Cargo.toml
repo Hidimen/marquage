@@ -14,4 +14,4 @@ doc = false
 indexmap = { workspace = true }
 paste = "1.0.15"
 
-marquage_derive = { path = "../marquage_derive", version = "0.1.0" }
+marquage_derive = { path = "../marquage_derive", version = "0.1.1" }
