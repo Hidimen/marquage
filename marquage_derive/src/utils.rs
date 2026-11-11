@@ -203,6 +203,17 @@ pub fn get_default(attributes: &[Attribute], ty: &Type) -> Result<Option<Expr>, 
       }});
       Ok(())
     },
+    Meta::NameValue(nv) if nv.path.is_ident("default_with") => {
+      let span = nv.value.span();
+      match &nv.value {
+        Expr::Path(_) | Expr::Closure(_) => {
+          let function = &nv.value;
+          res = Some(parse_quote_spanned! {span => (#function)()});
+          Ok(())
+        },
+        _ => Err(Error::new(span, "`default_with` must be a function path")),
+      }
+    },
     _ => Ok(()),
   })?;
 

@@ -130,6 +130,27 @@ fn bare_default_uses_trait_default() {
   assert_eq!(parsed, PathDefault { count: 0 });
 }
 
+fn default_port() -> u16 {
+  8080
+}
+
+#[derive(Parse, Debug, PartialEq)]
+struct WithDefaultWith {
+  #[marquage(default_with = default_port)]
+  port: u16,
+  #[marquage(default_with = String::new)]
+  name: String,
+}
+
+#[test]
+fn default_with_calls_the_given_function() {
+  let parsed: WithDefaultWith = from_str("unused = 0;").unwrap();
+  assert_eq!(parsed, WithDefaultWith { port: 8080, name: String::new() });
+
+  let parsed: WithDefaultWith = from_str(r###"port = 443;"###).unwrap();
+  assert_eq!(parsed, WithDefaultWith { port: 443, name: String::new() });
+}
+
 /// Defaults also apply to named fields of enum variants.
 #[derive(Parse, Debug, PartialEq)]
 enum Message {
